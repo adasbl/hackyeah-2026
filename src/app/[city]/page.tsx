@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Backdrop } from '@/components/backdrop';
 import { PlacesMapLazy } from '@/components/map/places-map-lazy';
 import { PlaceCard } from '@/components/place-card';
+import { ResultsViewToggle } from '@/components/results-view-toggle';
 import { SearchForm } from '@/components/search-form';
 import { ALL_CITIES_SLUG, categoryOf, cityName, providerName } from '@/lib/catalog';
 import { getCityOptions, searchPlaces } from '@/lib/data/places';
@@ -110,21 +111,27 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           </div>
         ) : (
           <>
-            <div className="mb-6 animate-fade-up">
-              <PlacesMapLazy
-                key={`${city}|${filters.category}|${filters.cards.join()}|${filters.q}`}
-                initialPlaces={mapResults.items.map(toMapPlace)}
-                initialTotal={mapResults.total}
-                filters={mapFilters}
-              />
-            </div>
-            <ul className="grid gap-4 md:grid-cols-2">
-              {items.map((p, i) => (
-                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
-                  <PlaceCard place={p} />
-                </li>
-              ))}
-            </ul>
+            <ResultsViewToggle
+              map={
+                <div className="animate-fade-up">
+                  <PlacesMapLazy
+                    key={`${city}|${filters.category}|${filters.cards.join()}|${filters.q}`}
+                    initialPlaces={mapResults.items.map(toMapPlace)}
+                    initialTotal={mapResults.total}
+                    filters={mapFilters}
+                  />
+                </div>
+              }
+              list={
+                <ul className="grid gap-4 md:grid-cols-2">
+                  {items.map((p, i) => (
+                    <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
+                      <PlaceCard place={p} />
+                    </li>
+                  ))}
+                </ul>
+              }
+            />
           </>
         )}
 
