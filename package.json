@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.5",
