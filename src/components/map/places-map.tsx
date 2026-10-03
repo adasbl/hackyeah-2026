@@ -8,13 +8,16 @@
  */
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { AlertCircle, Loader2, MapPin } from 'lucide-react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { CardProviderSlug, CategorySlug } from '@repo/types';
 import { categoryOf } from '@/lib/catalog';
 import { getMapPlaces } from '@/lib/data/map-actions';
 import { bboxOf, normalizeBbox, type Bbox, type MapPlace } from '@/lib/geo';
+
+// MapLibre v6 nie znajdzie workera sam w paczce Next.js – plik kopiuje scripts/copy-maplibre-worker.mjs.
+maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 const MAP_STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty';
 const DEBOUNCE_MS = 300;
