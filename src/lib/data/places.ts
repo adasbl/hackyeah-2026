@@ -9,17 +9,12 @@ import { ALL_CITIES_SLUG, CITIES, slugify } from '@/lib/catalog';
 import { isInBbox } from '@/lib/geo';
 import { MOCK_PLACES } from '@/mocks/places';
 
-const ACCEPTING = new Set(['accepted', 'conditional']);
+import { connection } from 'next/server';
+import type { PlacesQuery } from '@repo/types';
+import { db } from '@/db/client';
+import { createPlacesService } from '@/server/places';
 
-function toSummary(p: PlaceDetails): PlaceSummary {
-  const { id, slug, name, category, address, location, cards, priceFrom, updatedAt } = p;
-  return { id, slug, name, category, address, location, cards, priceFrom, updatedAt };
-}
-
-export async function searchPlaces(query: PlacesQuery): Promise<PlacesResponse> {
-  const limit = Math.min(query.limit ?? 20, 100);
-  const offset = query.offset ?? 0;
-  const q = query.q ? slugify(query.q) : '';
+export type { CityOption } from '@/server/places';
 
   const matches = MOCK_PLACES.filter((p) => {
     if (query.city && query.city !== ALL_CITIES_SLUG && p.address.citySlug !== query.city) return false;
@@ -36,18 +31,18 @@ export async function searchPlaces(query: PlacesQuery): Promise<PlacesResponse> 
   return { items: matches.slice(offset, offset + limit).map(toSummary), total: matches.length, limit, offset };
 }
 
-export async function getPlaceBySlug(slug: string): Promise<PlaceDetails | null> {
-  return MOCK_PLACES.find((p) => p.slug === slug) ?? null;
+// Odczyt przy każdym żądaniu, także na stronie głównej po nowym imporcie.
+export async function searchPlaces(query: PlacesQuery) {
+  await connection();
+  return service.searchPlaces(query);
 }
 
-export interface CityOption {
-  slug: string;
-  name: string;
-  count: number;
+export async function getPlaceBySlug(slug: string) {
+  await connection();
+  return service.getPlaceBySlug(slug);
 }
 
-/** Miasta do listy rozwijanej (z liczbą obiektów). Pierwsza pozycja: cała Polska. */
-export async function getCityOptions(): Promise<CityOption[]> {
-  const cities = CITIES.map((c) => ({ ...c, count: MOCK_PLACES.filter((p) => p.address.citySlug === c.slug).length }));
-  return [{ slug: ALL_CITIES_SLUG, name: 'Cała Polska', count: MOCK_PLACES.length }, ...cities];
+export async function getCityOptions() {
+  await connection();
+  return service.getCityOptions();
 }
