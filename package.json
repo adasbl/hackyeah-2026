@@ -9,11 +9,14 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/db/*.test.ts tests/server/*.test.ts",
     "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.3",
     "geist": "^1.7.2",
     "lucide-react": "^1.51.0",
     "maplibre-gl": "^6.11.2",
