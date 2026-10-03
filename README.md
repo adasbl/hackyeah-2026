@@ -11,9 +11,8 @@ Pełny plan i podział pracy: [plan projektu](podsumowanie_projektu_wyszukiwarka
 ## Stan projektu
 
 Repozytorium zawiera aplikację Next.js z wyszukiwarką, mapą MapLibre
-i danymi demonstracyjnymi oraz konfigurację lokalnej bazy.
-Frontend można wdrożyć na Vercel; migracje, seed i podłączenie bazy
-pozostają zadaniami backendowymi.
+i backendem PostgreSQL/PostGIS oraz migrację i seed danych demonstracyjnych.
+Frontend odczytuje opublikowane obiekty z bazy przy każdym żądaniu.
 
 ## Lokalna baza
 
@@ -83,6 +82,7 @@ npm install
 npm run dev    # http://localhost:3000
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 ```
 
@@ -97,7 +97,9 @@ Worker MapLibre i jego moduł współdzielony są kopiowane do `public/maplibre/
 po instalacji oraz przed buildem. Dzięki temu trafiają do wdrożenia również
 przy ponownym użyciu zainstalowanych zależności.
 
-Obecny frontend korzysta z mocków i nie wymaga połączenia z bazą do buildu.
+Build nie wymaga połączenia z bazą. Do działania wdrożonej aplikacji ustaw
+`DATABASE_URL` w środowiskach Preview i Production na Vercel i przygotuj schemat
+bazy przed wdrożeniem. Klient bazy jest inicjalizowany dopiero przy żądaniu.
 `NEXT_PUBLIC_MAP_STYLE_URL` jest opcjonalny; bez niego mapa używa OpenFreeMap.
 Po zmianie tej zmiennej na Vercel wykonaj ponowne wdrożenie.
 
@@ -108,7 +110,7 @@ npm ci
 npm run build
 ```
 
-Na razie dane pochodzą z mocka (`src/mocks/places.ts`). Format odpowiedzi API do uzgodnienia: [`docs/api-contract.md`](docs/api-contract.md).
+Dane pochodzą z PostgreSQL przez Drizzle. Format danych opisuje [`docs/api-contract.md`](docs/api-contract.md).
 
 | Ścieżka | Co to jest |
 |---|---|
