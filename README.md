@@ -91,4 +91,12 @@ Na razie dane pochodzą z mocka (`src/mocks/places.ts`). Format odpowiedzi API d
 | `/` | ekran wyszukiwania (miasto, karta, kategoria) |
 | `/warszawa?cards=multisport&category=basen` | wyniki – linkowalne, renderowane na serwerze |
 | `/polska` | wyniki dla całej Polski |
-| `/places/[slug]` | szczegóły obiektu ze statusami kart |
+| `/places/[slug]` | szczegóły obiektu ze statusami kart, mini-mapą i statusem „otwarte teraz” |
+| `/polska?lat=52.23&lng=21.01&radius=5000` | „w pobliżu mnie” – od najbliższych, w promieniu 5 km |
+| `/warszawa?open=1` | tylko obiekty otwarte teraz |
+| `/warszawa?view=map` | widok mapy (duża mapa, pełny ekran, filtry na mapie); domyślnie lista |
+| `/ulubione` | ulubione obiekty zapisane w przeglądarce (localStorage) |
+
+Mapa grupuje bliskie obiekty w klastry (kółko z liczbą i pierścieniem w kolorach kategorii).
+Pod wynikami jest porównanie kart: ile obiektów przy bieżących filtrach akceptuje każdą kartę.
+Mock zawiera 20 ręcznie opisanych obiektów i ~120 generowanych deterministycznie (`src/mocks/places.ts`).

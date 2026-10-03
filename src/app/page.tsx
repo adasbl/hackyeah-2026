@@ -1,9 +1,14 @@
 import { Backdrop } from '@/components/backdrop';
+import { CardComparison } from '@/components/card-comparison';
 import { SearchForm } from '@/components/search-form';
-import { getCityOptions } from '@/lib/data/places';
+import { ALL_CITIES_SLUG, CITIES, cityLocative } from '@/lib/catalog';
+import { getCardStats, getCityOptions } from '@/lib/data/places';
 
 export default async function HomePage() {
-  const cityOptions = await getCityOptions();
+  const areas = [{ slug: ALL_CITIES_SLUG, label: 'Cała Polska' }, ...CITIES.map((c) => ({ slug: c.slug, label: c.name }))];
+  const [cityOptions, ...stats] = await Promise.all([getCityOptions(), ...areas.map((a) => getCardStats({ city: a.slug }))]);
+  const datasets = areas.map((a, i) => ({ ...a, where: cityLocative(a.slug), stats: stats[i] })).filter((d) => d.stats.total > 0);
+
   return (
     <section className="relative isolate flex flex-1 flex-col">
       <Backdrop />
@@ -12,8 +17,11 @@ export default async function HomePage() {
           Znajdź obiekt{' '}
           <span className="bg-gradient-to-r from-brand-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">dla swojej karty</span>
         </h1>
-        <div className="mt-10 animate-fade-up [animation-delay:120ms]">
+        <div className="relative z-20 mt-10 animate-fade-up [animation-delay:120ms]">
           <SearchForm cityOptions={cityOptions} />
+        </div>
+        <div className="mt-6 animate-fade-up [animation-delay:240ms]">
+          <CardComparison datasets={datasets} />
         </div>
       </div>
     </section>

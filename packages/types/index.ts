@@ -80,6 +80,10 @@ export interface PlaceSummary {
   cards: CardClaim[];
   /** Najniższa znana cena, do wyświetlenia na liście. */
   priceFrom: Price | null;
+  /** Godziny otwarcia – na liście potrzebne do statusu „otwarte teraz”. */
+  openingHours: OpeningHoursEntry[];
+  /** Odległość od punktu `lat`/`lng` z zapytania (metry); brak, gdy zapytanie nie miało punktu. */
+  distanceMeters?: number;
   updatedAt: string;
 }
 
@@ -88,11 +92,13 @@ export interface PlaceDetails extends PlaceSummary {
   description: string | null;
   website: string | null;
   phone: string | null;
-  openingHours: OpeningHoursEntry[];
   amenities: string[];
   prices: Price[];
   createdAt: string;
 }
+
+export const PLACES_SORTS = ['name', 'distance'] as const;
+export type PlacesSort = (typeof PLACES_SORTS)[number];
 
 /** Parametry GET /api/places (wszystkie opcjonalne). */
 export interface PlacesQuery {
@@ -103,8 +109,12 @@ export interface PlacesQuery {
   cards?: CardProviderSlug[]; // w URL: cards=multisport,beactive
   lat?: number;
   lng?: number;
-  radius?: number; // metry
+  radius?: number; // metry, wymaga lat/lng
   bbox?: [number, number, number, number]; // west,south,east,north
+  /** Tylko obiekty otwarte w chwili zapytania (czas Europe/Warsaw). W URL: open=1 */
+  openNow?: boolean;
+  /** name = alfabetycznie (domyślnie), distance = od najbliższego (wymaga lat/lng). */
+  sort?: PlacesSort;
   limit?: number; // domyślnie 20, max 100
   offset?: number;
 }
@@ -114,6 +124,21 @@ export interface PlacesResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+/** Liczba obiektów wg statusu jednej karty – do porównania kart w mieście. */
+export interface CardCoverage {
+  provider: CardProviderSlug;
+  accepted: number;
+  conditional: number;
+  notAccepted: number;
+  unknown: number;
+}
+
+/** GET /api/stats/cards?city=…&category=… */
+export interface CardStatsResponse {
+  total: number;
+  providers: CardCoverage[];
 }
 
 export interface ApiError {

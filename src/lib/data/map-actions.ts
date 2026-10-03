@@ -2,12 +2,12 @@
 
 /**
  * Server Action dla mapy: zwraca obiekty w widocznym prostokącie (bbox) + aktywne filtry.
- * Korzysta z tej samej funkcji searchPlaces co lista, więc gdy Osoba 2 podmieni ją
+ * Korzysta z tego samego filtrowania co lista, więc gdy Osoba 2 podmieni dane
  * na bazę / GET /api/places, mapa zacznie działać na prawdziwych danych bez zmian tutaj.
  */
 import { z } from 'zod';
 import { CARD_PROVIDER_SLUGS, CATEGORY_SLUGS } from '@repo/types';
-import { searchPlaces } from '@/lib/data/places';
+import { searchMapPoints } from '@/lib/data/places';
 import { MAP_LIMIT, toMapPlace, type MapPlacesResult } from '@/lib/geo';
 
 const lng = z.number().min(-180).max(180);
@@ -18,6 +18,10 @@ const inputSchema = z.object({
   category: z.enum(CATEGORY_SLUGS).optional(),
   cards: z.array(z.enum(CARD_PROVIDER_SLUGS)).max(CARD_PROVIDER_SLUGS.length).default([]),
   q: z.string().trim().max(100).optional(),
+  openNow: z.boolean().optional(),
+  lat: lat.optional(),
+  lng: lng.optional(),
+  radius: z.number().int().min(100).max(100_000).optional(),
 });
 
 export type MapPlacesInput = z.input<typeof inputSchema>;
@@ -27,6 +31,6 @@ export async function getMapPlaces(input: MapPlacesInput): Promise<MapPlacesResu
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) throw new Error('Nieprawidłowe parametry mapy');
 
-  const { items, total } = await searchPlaces({ ...parsed.data, limit: MAP_LIMIT });
+  const { items, total } = await searchMapPoints({ ...parsed.data, limit: MAP_LIMIT });
   return { items: items.map(toMapPlace), total };
 }
