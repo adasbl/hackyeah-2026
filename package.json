@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "db:import:osm:warsaw": "tsx src/db/import-osm-warsaw.ts",
     "db:seed": "tsx src/db/seed.ts",
-    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
+    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/osm-warsaw.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.5",
