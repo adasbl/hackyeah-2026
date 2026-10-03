@@ -4,7 +4,9 @@
  * Mapa obiektów (MapLibre GL JS).
  * - wygląd mapy: NEXT_PUBLIC_MAP_STYLE_URL, a gdy pusty – darmowy styl OpenFreeMap,
  * - start: pinezki z serwera (wyniki dla miasta i filtrów), widok dopasowany do nich,
- * - po przesunięciu / przybliżeniu (z opóźnieniem 300 ms) pobiera obiekty z widocznego prostokąta (bbox).
+ * - po przesunięciu / przybliżeniu (z opóźnieniem 300 ms) pobiera obiekty z widocznego prostokąta (bbox),
+ * - od razu pyta o zgodę na lokalizację; po zgodzie pokazuje kropkę użytkownika, ale mapę przybliża
+ *   dopiero przycisk „Przybliż do mojej lokalizacji”.
  */
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { AlertCircle, Loader2, MapPin } from 'lucide-react';
@@ -21,6 +23,8 @@ maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 const MAP_STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty';
 const DEBOUNCE_MS = 300;
+/** Przybliżenie po kliknięciu „moja lokalizacja” (jeśli mapa jest już bliżej – zostaje). */
+const LOCATE_ZOOM = 14;
 
 /** Kolory pinezek – te same odcienie co kafelki kategorii w catalog.ts (Tailwind *-500). */
 const MARKER_COLORS: Record<CategorySlug, string> = {
@@ -96,6 +100,35 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     mapRef.current = map;
 
+    // Lokalizacja użytkownika: watchPosition od razu wywołuje pytanie o zgodę w przeglądarce.
+    // Kropkę pokazujemy, ale widoku nie ruszamy – przybliża dopiero kliknięcie przycisku.
+    let userPos: [lng: number, lat: number] | undefined;
+    let userMarker: maplibregl.Marker | undefined;
+    let watchId: number | undefined;
+    const locate = new LocateControl(() => {
+      if (userPos) map.flyTo({ center: userPos, zoom: Math.max(map.getZoom(), LOCATE_ZOOM) });
+    });
+    map.addControl(locate, 'top-right');
+
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        ({ coords }) => {
+          if (disposed) return;
+          userPos = [coords.longitude, coords.latitude];
+          if (userMarker) userMarker.setLngLat(userPos);
+          else userMarker = new maplibregl.Marker({ element: createUserDot() }).setLngLat(userPos).addTo(map);
+          locate.setState('ready');
+        },
+        (err) => {
+          if (disposed || userPos) return; // pojedynczy timeout nie kasuje znanej już pozycji
+          locate.setState(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
+        },
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 20_000 },
+      );
+    } else {
+      locate.setState('unavailable');
+    }
+
     async function loadVisible() {
       const b = map.getBounds();
       const bbox = normalizeBbox([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] as Bbox);
@@ -121,6 +154,8 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
     return () => {
       disposed = true;
       clearTimeout(timer);
+      if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+      userMarker?.remove();
       markers.forEach((m) => m.remove());
       markers.clear();
       map.remove();
@@ -189,6 +224,62 @@ function MapStatus({ status, shown, total }: { status: Status; shown: number; to
       {content}
     </p>
   );
+}
+
+type LocateState = 'waiting' | 'ready' | 'denied' | 'unavailable';
+
+const LOCATE_LABELS: Record<LocateState, string> = {
+  waiting: 'Czekam na Twoją lokalizację…',
+  ready: 'Przybliż do mojej lokalizacji',
+  denied: 'Brak zgody na lokalizację – możesz ją włączyć w ustawieniach przeglądarki',
+  unavailable: 'Lokalizacja niedostępna',
+};
+
+/**
+ * Przycisk „przybliż do mojej lokalizacji” w tym samym stylu co przyciski +/− (klasy i ikona z CSS MapLibre).
+ * Własny zamiast GeolocateControl, bo ten przy uruchomieniu sam przesuwa mapę, a my chcemy to robić dopiero po kliknięciu.
+ */
+class LocateControl implements maplibregl.IControl {
+  private readonly container = document.createElement('div');
+  private readonly button = document.createElement('button');
+
+  constructor(onClick: () => void) {
+    this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+    this.button.type = 'button';
+    this.button.className = 'maplibregl-ctrl-geolocate';
+    const icon = document.createElement('span');
+    icon.className = 'maplibregl-ctrl-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    this.button.append(icon);
+    this.button.addEventListener('click', onClick);
+    this.container.append(this.button);
+    this.setState('waiting');
+  }
+
+  setState(state: LocateState) {
+    const label = LOCATE_LABELS[state];
+    this.button.disabled = state !== 'ready';
+    this.button.setAttribute('aria-label', label);
+    // title na kontenerze – na wyłączonym przycisku część przeglądarek nie pokazuje podpowiedzi.
+    this.container.title = label;
+  }
+
+  onAdd() {
+    return this.container;
+  }
+
+  onRemove() {
+    this.container.remove();
+  }
+}
+
+/** Niebieska pulsująca kropka „tu jesteś” – wygląd z CSS MapLibre (ta sama co w GeolocateControl). */
+function createUserDot() {
+  const el = document.createElement('div');
+  el.className = 'maplibregl-user-location-dot';
+  el.setAttribute('aria-label', 'Twoja lokalizacja');
+  el.setAttribute('role', 'img');
+  return el;
 }
 
 /**
