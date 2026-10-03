@@ -226,7 +226,7 @@ Cel: uruchomiona aplikacja Next.js z bazą.
 - dodać seed testowych obiektów,
 - przygotować podstawowy layout i routing.
 
-Kryterium ukończenia: pnpm dev uruchamia aplikację, migracje przechodzą, a seed tworzy dane testowe.
+Kryterium ukończenia: npm run dev uruchamia aplikację, migracje przechodzą, a seed tworzy dane testowe.
 
 ### Etap 2 — wyszukiwanie i mapa
 
@@ -331,7 +331,7 @@ Zaczyna od:
 6. Dodania MapLibre GL JS jako Client Component, CSS biblioteki i stylu z NEXT_PUBLIC_MAP_STYLE_URL.
 7. Podłączenia punktów z API oraz pobierania obiektów po bbox po zmianie widoku mapy (z debounce).
 
-Scaffold Next.js powinien trafić do repozytorium od razu, żeby osoba 2 mogła dodać Route Handlers, a osoba 3 wykonać pierwszy deploy. Uzgadniamy pnpm i commitujemy lockfile.
+Scaffold Next.js powinien trafić do repozytorium od razu, żeby osoba 2 mogła dodać Route Handlers, a osoba 3 wykonać pierwszy deploy. Uzgadniamy npm i commitujemy package-lock.json.
 
 ### Osoba 2 — backend i baza danych
 
@@ -342,7 +342,7 @@ Zaczyna teraz od:
 3. Przygotowania wersjonowanych migracji: rozszerzenia, places, card_providers, place_card_claims, sources i reports; indeks GiST, unikalny slug oraz ograniczenia statusów. Minimalny pierwszy endpoint może zacząć od trzech pierwszych tabel.
 4. Ustalenia schematu PostGIS lokalnie i w chmurze. Typ geography(Point, 4326) i funkcje ST_* muszą wskazywać rzeczywisty schemat rozszerzenia. Nie opierać tego na sesyjnym SET search_path przy transaction poolerze.
 5. Dodania idempotentnego seeda 20 obiektów ze współrzędnymi, operatorami kart i źródłami; ponowne uruchomienie nie tworzy duplikatów.
-6. Przygotowania skryptów pnpm db:generate, pnpm db:migrate i pnpm db:seed. db:migrate używa DATABASE_MIGRATION_URL. Seed ma być uruchamiany jawnie na wybranym środowisku; nie automatycznie przy buildzie.
+6. Przygotowania skryptów npm run db:generate, npm run db:migrate i npm run db:seed. db:migrate używa DATABASE_MIGRATION_URL. Seed ma być uruchamiany jawnie na wybranym środowisku; nie automatycznie przy buildzie.
 7. Zbudowania GET /api/health i GET /api/places: walidacja Zod, limit/paginacja, q/city/category/cards, potem bbox i promień PostGIS. Route Handlers korzystające z postgres.js działają w runtime Node.js.
 8. Uzgodnienia kontraktu z osobą 1: id, slug, name, address, city, category, lat, lng i lista statusów kart ze źródłem oraz datą. GeoJSON i MapLibre używają kolejności [lng, lat]; radius podajemy w metrach, bbox jako west,south,east,north. Ustalamy też format błędów i paginacji.
 9. Skonfigurowania klienta bazy dla chmury: prepare: false, początkowo max: 1 i SSL; lokalny Docker może działać bez SSL. Klient tylko w kodzie serwerowym, tworzony na poziomie modułu. Nie zakładamy, że Drizzle automatycznie przeniesie JWT użytkownika do polityk RLS.
@@ -386,11 +386,11 @@ Rezultat pierwszego etapu: działający adres Vercel preview, który pobiera dan
 5. Uruchomić aplikację na Vercel preview z bazą Supabase staging i sprawdzić /api/health.
 6. MapLibre można przygotować wcześniej na mockach; po działaniu wyszukiwania podłączyć punkty z API i filtrowanie po bbox.
 
-Po pierwszym dniu zespół powinien mieć frontend z formularzem, backend zwracający obiekty, lokalną bazę z danymi oraz pierwszy adres preview. Docelowo pnpm dev uruchamia aplikację po jednorazowej konfiguracji i starcie bazy przez docker compose up -d.
+Po pierwszym dniu zespół powinien mieć frontend z formularzem, backend zwracający obiekty, lokalną bazę z danymi oraz pierwszy adres preview. Docelowo npm run dev uruchamia aplikację po jednorazowej konfiguracji i starcie bazy przez docker compose up -d.
 
 ## 13. Kolejność przekazania pracy na teraz
 
-Stan repozytorium w chwili aktualizacji planu: dokumentacja i Docker Compose; brak jeszcze package.json, aplikacji Next.js, migracji i seeda. Nazwy skryptów pnpm w tym planie są kontraktem do wdrożenia przez zespół, a nie już dostępnymi poleceniami.
+Stan repozytorium w chwili aktualizacji planu: dokumentacja i Docker Compose; brak jeszcze package.json, aplikacji Next.js, migracji i seeda. Nazwy skryptów npm w tym planie są kontraktem do wdrożenia przez zespół, a nie już dostępnymi poleceniami.
 
 1. Osoba 3 przygotowuje Supabase staging i połączenia; osoba 1 równolegle publikuje scaffold Next.js w repozytorium.
 2. Osoba 2 przygotowuje i sprawdza migracje + seed na Dockerze, uzgadnia ze stroną frontendową kontrakt /api/places.

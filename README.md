@@ -11,7 +11,7 @@ Pełny plan i podział pracy: [plan projektu](podsumowanie_projektu_wyszukiwarka
 ## Stan projektu
 
 Repozytorium zawiera plan i konfigurację lokalnej bazy. Aplikacja Next.js,
-migracje, seed i skrypty pnpm są zadaniami do wykonania.
+migracje, seed i skrypty npm są zadaniami do wykonania.
 Nie ma jeszcze aplikacji, którą można wdrożyć na Vercel.
 
 ## Lokalna baza
@@ -34,7 +34,7 @@ bazą wspólną dla wdrożenia testowego jest Supabase staging.
 
 ## Co robimy teraz
 
-1. **Osoba 1 — frontend:** tworzy scaffold Next.js i lockfile pnpm w repozytorium,
+1. **Osoba 1 — frontend:** tworzy scaffold Next.js i `package-lock.json` w repozytorium,
    przygotowuje listę na mockach oraz komponent MapLibre.
 2. **Osoba 2 — backend:** dodaje Drizzle, migracje, idempotentny seed 20 obiektów,
    `GET /api/health` i `GET /api/places` w Route Handlers Next.js.
@@ -74,14 +74,14 @@ chat goes brrr...
 
 ## Frontend – uruchomienie
 
-Wymagania: Node.js 20.9+ i pnpm (`corepack enable` albo `npm i -g pnpm`).
+Wymagania: Node.js 20.9+ i npm (dostarczany razem z Node.js).
 
 ```bash
-pnpm install
-pnpm dev        # http://localhost:3000
-pnpm lint
-pnpm typecheck
-pnpm build
+npm install
+npm run dev        # http://localhost:3000
+npm run lint
+npm run typecheck
+npm run build
 ```
 
 Na razie dane pochodzą z mocka (`src/mocks/places.ts`). Format odpowiedzi API do uzgodnienia: [`docs/api-contract.md`](docs/api-contract.md).
