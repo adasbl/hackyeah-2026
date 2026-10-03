@@ -10,9 +10,10 @@ Pełny plan i podział pracy: [plan projektu](podsumowanie_projektu_wyszukiwarka
 
 ## Stan projektu
 
-Repozytorium zawiera plan i konfigurację lokalnej bazy. Aplikacja Next.js,
-migracje, seed i skrypty pnpm są zadaniami do wykonania.
-Nie ma jeszcze aplikacji, którą można wdrożyć na Vercel.
+Repozytorium zawiera aplikację Next.js, schemat Drizzle, migrację SQL i seed DEMO.
+Wyszukiwanie, szczegóły i lista miast odczytują dane z bazy przez `DATABASE_URL`.
+Publiczne API, panel administracyjny i importer prawdziwych danych pozostają
+kolejnymi zadaniami. Używamy npm i `package-lock.json`.
 
 ## Lokalna baza
 
@@ -74,17 +75,38 @@ chat goes brrr...
 
 ## Frontend – uruchomienie
 
-Wymagania: Node.js 20.9+ i pnpm (`corepack enable` albo `npm i -g pnpm`).
+Wymagania: Node.js 20.9+ i npm.
 
 ```bash
-pnpm install
-pnpm dev        # http://localhost:3000
-pnpm lint
-pnpm typecheck
-pnpm build
+npm install
+npm run dev     # http://localhost:3000
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-Na razie dane pochodzą z mocka (`src/mocks/places.ts`). Format odpowiedzi API do uzgodnienia: [`docs/api-contract.md`](docs/api-contract.md).
+Dane wyszukiwania, szczegółów i listy miast pochodzą z PostgreSQL przez Drizzle
+(`src/lib/data/places.ts` → `src/server/places.ts`). Ustaw `DATABASE_URL` w `.env.local`
+na połączenie Supabase Transaction pooler i wykonaj migrację przed uruchomieniem.
+Frontend pokazuje tylko rekordy `places.is_published = true`; brak informacji
+o karcie oznacza `unknown`. Filtr kart wymaga akceptacji każdej wybranej karty
+i pomija wygasłe potwierdzenia. Strony odczytują dane przy każdym żądaniu.
+Plik `src/mocks/places.ts` nie jest używany przez aplikację.
+
+`npm run db:seed` dodaje fikcyjne dane DEMO, a nie prawdziwe obiekty.
+Prawdziwe dane należy zaimportować osobno. Format danych frontendu opisuje
+[`docs/api-contract.md`](docs/api-contract.md).
+
+Test odczytu Supabase (tylko SELECT, bez modyfikowania bazy):
+
+```powershell
+$env:PLACES_INTEGRATION_TEST = "1"
+try {
+  npm run db:test
+} finally {
+  Remove-Item Env:PLACES_INTEGRATION_TEST
+}
+```
 
 | Ścieżka | Co to jest |
 |---|---|
