@@ -21,7 +21,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const f = parseSearchParams(await searchParams);
   const what = f.category ? categoryOf(f.category).name : 'Obiekty sportowe';
   const cards = f.cards.length ? ` z kartą ${f.cards.map(providerName).join(', ')}` : '';
-  return { title: `${what}${cards} – ${cityName(city)}` };
+  const cities = await getCityOptions();
+  const name = cities.find((option) => option.slug === city)?.name ?? cityName(city);
+  return { title: `${what}${cards} – ${name}` };
 }
 
 export default async function SearchResultsPage({ params, searchParams }: Props) {
@@ -42,6 +44,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   ]);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const name = cityOptions.find((option) => option.slug === city)?.name ?? cityName(city);
   const hasFilters = !!(filters.category || filters.cards.length || filters.q);
   const pageLink = (page: number) => buildSearchUrl(city, { ...filters, page });
 
@@ -65,7 +68,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
               {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'}
               <span className="text-slate-400"> · </span>
-              {city === ALL_CITIES_SLUG ? 'cała Polska' : cityName(city)}
+              {city === ALL_CITIES_SLUG ? 'cała Polska' : name}
             </h1>
             <p className="mt-1 text-sm text-slate-500" aria-live="polite">
               {total === 0 ? 'Brak wyników' : `${total} ${plural(total, 'obiekt', 'obiekty', 'obiektów')}`}

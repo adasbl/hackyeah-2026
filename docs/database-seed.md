@@ -5,7 +5,7 @@ Uruchamiaj z katalogu repozytorium po wykonaniu migracji. Skrypt odczytuje
 adresu Transaction pooler przeznaczonego dla backendu.
 
 ```powershell
-pnpm db:seed
+npm run db:seed
 ```
 
 Jeśli zwykły terminal nie znajduje Node.js, można użyć środowiska Codex:
@@ -17,7 +17,7 @@ Jeśli zwykły terminal nie znajduje Node.js, można użyć środowiska Codex:
 Próba wykonująca te same zapytania, ale wycofująca transakcję:
 
 ```powershell
-pnpm db:seed --dry-run
+npm run db:seed -- --dry-run
 ```
 
 ## Zawartość
@@ -50,11 +50,13 @@ w polach tych fikcyjnych rekordów mogą zostać nadpisane. Seed nie usuwa
 innych miejsc i nie uruchamia importu OSM.
 
 Po wykonaniu zobacz rekordy w Supabase Table Editor, schemat `public`.
-Frontend nadal korzysta z mocków, dopóki nie podłączymy backendu.
+Frontend odczytuje dane z bazy wskazanej przez `DATABASE_URL` i pokazuje tylko
+opublikowane obiekty. Seed zapisuje do `DATABASE_MIGRATION_URL`; oba adresy
+muszą wskazywać ten sam projekt, aby zobaczyć dane DEMO w aplikacji.
 
 ## Testy
 
-`pnpm db:test` sprawdza lokalnie dane i zapis/odczyt współrzędnych, bez połączenia
+`npm run db:test` sprawdza lokalnie dane i zapis/odczyt współrzędnych, bez połączenia
 z bazą. Test integracyjny jest domyślnie pomijany.
 
 Opcjonalny test na Supabase wykonuje seed dwukrotnie, sprawdza identyfikatory,
@@ -64,7 +66,7 @@ są wycofywane. Uruchom tylko na bazie, na której możesz testować:
 ```powershell
 $env:SEED_INTEGRATION_TEST = "1"
 try {
-  pnpm db:test
+  npm run db:test
 } finally {
   Remove-Item Env:SEED_INTEGRATION_TEST
 }

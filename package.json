@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx src/db/seed.ts",
-    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts"
+    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.5",
@@ -20,6 +20,7 @@
     "postgres": "^3.4.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "server-only": "^0.0.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -35,7 +36,7 @@
     "tsx": "^4.23.15",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "npm@11.6.2",
   "engines": {
     "node": ">=20.9"
   }
