@@ -6,6 +6,7 @@
  */
 import type { PlaceDetails, PlaceSummary, PlacesQuery, PlacesResponse } from '@repo/types';
 import { ALL_CITIES_SLUG, CITIES, slugify } from '@/lib/catalog';
+import { isInBbox } from '@/lib/geo';
 import { MOCK_PLACES } from '@/mocks/places';
 
 const ACCEPTING = new Set(['accepted', 'conditional']);
@@ -22,6 +23,7 @@ export async function searchPlaces(query: PlacesQuery): Promise<PlacesResponse> 
 
   const matches = MOCK_PLACES.filter((p) => {
     if (query.city && query.city !== ALL_CITIES_SLUG && p.address.citySlug !== query.city) return false;
+    if (query.bbox && !isInBbox(p.location, query.bbox)) return false;
     if (query.category && p.category !== query.category) return false;
     if (query.cards?.length) {
       const ok = query.cards.every((provider) => p.cards.some((c) => c.provider === provider && ACCEPTING.has(c.status)));

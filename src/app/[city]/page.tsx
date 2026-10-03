@@ -3,10 +3,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Backdrop } from '@/components/backdrop';
+import { PlacesMapLazy } from '@/components/map/places-map-lazy';
 import { PlaceCard } from '@/components/place-card';
 import { SearchForm } from '@/components/search-form';
 import { ALL_CITIES_SLUG, categoryOf, cityName, providerName } from '@/lib/catalog';
 import { getCityOptions, searchPlaces } from '@/lib/data/places';
+import { MAP_LIMIT, toMapPlace } from '@/lib/geo';
 import { buildSearchUrl, PAGE_SIZE, parseSearchParams } from '@/lib/search-params';
 
 type Props = {
@@ -29,17 +31,14 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   if (!CITY_SLUG.test(city)) notFound();
 
   const filters = parseSearchParams(await searchParams);
-  const [{ items, total }, cityOptions] = await Promise.all([
-    searchPlaces({
-      city,
-      category: filters.category,
-      cards: filters.cards,
-      q: filters.q,
-      limit: PAGE_SIZE,
-      offset: (filters.page - 1) * PAGE_SIZE,
-    }),
+  const baseQuery = { city, category: filters.category, cards: filters.cards, q: filters.q };
+  const [{ items, total }, mapResults, cityOptions] = await Promise.all([
+    searchPlaces({ ...baseQuery, limit: PAGE_SIZE, offset: (filters.page - 1) * PAGE_SIZE }),
+    // Mapa pokazuje wszystkie wyniki (do MAP_LIMIT), nie tylko bieżącą stronę listy.
+    searchPlaces({ ...baseQuery, limit: MAP_LIMIT }),
     getCityOptions(),
   ]);
+  const mapFilters = { category: filters.category, cards: filters.cards, q: filters.q };
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilters = !!(filters.category || filters.cards.length || filters.q);
@@ -107,13 +106,23 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
             </div>
           </div>
         ) : (
-          <ul className="grid gap-4 md:grid-cols-2">
-            {items.map((p, i) => (
-              <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
-                <PlaceCard place={p} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mb-6 animate-fade-up">
+              <PlacesMapLazy
+                key={`${city}|${filters.category}|${filters.cards.join()}|${filters.q}`}
+                initialPlaces={mapResults.items.map(toMapPlace)}
+                initialTotal={mapResults.total}
+                filters={mapFilters}
+              />
+            </div>
+            <ul className="grid gap-4 md:grid-cols-2">
+              {items.map((p, i) => (
+                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
+                  <PlaceCard place={p} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
 
         {pages > 1 && (
