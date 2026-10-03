@@ -10,10 +10,10 @@ Pełny plan i podział pracy: [plan projektu](podsumowanie_projektu_wyszukiwarka
 
 ## Stan projektu
 
-Repozytorium zawiera aplikację Next.js, schemat Drizzle, migrację SQL i seed DEMO.
-Wyszukiwanie, szczegóły i lista miast odczytują dane z bazy przez `DATABASE_URL`.
-Publiczne API, panel administracyjny i importer prawdziwych danych pozostają
-kolejnymi zadaniami. Używamy npm i `package-lock.json`.
+Repozytorium zawiera aplikację Next.js z wyszukiwarką, mapą MapLibre
+i danymi demonstracyjnymi oraz konfigurację lokalnej bazy.
+Frontend można wdrożyć na Vercel; migracje, seed i podłączenie bazy
+pozostają zadaniami backendowymi.
 
 ## Lokalna baza
 
@@ -75,7 +75,8 @@ chat goes brrr...
 
 ## Frontend – uruchomienie
 
-Wymagania: Node.js 20.9+ (npm jest instalowany razem z Node.js).
+Wymagania: Node.js 24.x i npm (w repozytorium wskazano npm 11.6.2).
+Używamy wyłącznie npm; jedynym lockfile jest `package-lock.json`.
 
 ```bash
 npm install
@@ -85,28 +86,29 @@ npm run typecheck
 npm run build
 ```
 
-Dane wyszukiwania, szczegółów i listy miast pochodzą z PostgreSQL przez Drizzle
-(`src/lib/data/places.ts` → `src/server/places.ts`). Ustaw `DATABASE_URL` w `.env.local`
-na połączenie Supabase Transaction pooler i wykonaj migrację przed uruchomieniem.
-Frontend pokazuje tylko rekordy `places.is_published = true`; brak informacji
-o karcie oznacza `unknown`. Filtr kart wymaga akceptacji każdej wybranej karty
-i pomija wygasłe potwierdzenia. Strony odczytują dane przy każdym żądaniu.
-Plik `src/mocks/places.ts` nie jest używany przez aplikację.
+## Build na Vercel
 
-`npm run db:seed` dodaje fikcyjne dane DEMO, a nie prawdziwe obiekty.
-Prawdziwe dane należy zaimportować osobno. Format danych frontendu opisuje
-[`docs/api-contract.md`](docs/api-contract.md).
+Importuj repozytorium z katalogiem głównym projektu ustawionym na jego root.
+Plik `vercel.json` ustawia framework Next.js, instalację `npm ci`
+i build `npm run build`. Wersja Node.js 24.x jest określona w `package.json`.
+Pozostaw domyślny katalog wyjściowy Next.js.
 
-Test odczytu Supabase (tylko SELECT, bez modyfikowania bazy):
+Worker MapLibre i jego moduł współdzielony są kopiowane do `public/maplibre/`
+po instalacji oraz przed buildem. Dzięki temu trafiają do wdrożenia również
+przy ponownym użyciu zainstalowanych zależności.
 
-```powershell
-$env:PLACES_INTEGRATION_TEST = "1"
-try {
-  npm run db:test
-} finally {
-  Remove-Item Env:PLACES_INTEGRATION_TEST
-}
+Obecny frontend korzysta z mocków i nie wymaga połączenia z bazą do buildu.
+`NEXT_PUBLIC_MAP_STYLE_URL` jest opcjonalny; bez niego mapa używa OpenFreeMap.
+Po zmianie tej zmiennej na Vercel wykonaj ponowne wdrożenie.
+
+Lokalna weryfikacja instalacji takiej jak na Vercel:
+
+```bash
+npm ci
+npm run build
 ```
+
+Na razie dane pochodzą z mocka (`src/mocks/places.ts`). Format odpowiedzi API do uzgodnienia: [`docs/api-contract.md`](docs/api-contract.md).
 
 | Ścieżka | Co to jest |
 |---|---|
