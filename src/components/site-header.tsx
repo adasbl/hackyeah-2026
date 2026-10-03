@@ -6,10 +6,10 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-center px-4">
         <Link
           href="/"
-          aria-label="fit-pass-finder – strona główna"
+          aria-label="Fit Pass Finder, strona główna"
           className="bg-gradient-to-r from-brand-600 via-violet-600 to-fuchsia-500 bg-clip-text text-xl font-bold tracking-tight text-transparent transition hover:opacity-80"
         >
-          fit-pass-finder
+          Fit Pass Finder
         </Link>
       </div>
     </header>
