@@ -34,7 +34,7 @@ bazą wspólną dla wdrożenia testowego jest Supabase staging.
 
 ## Co robimy teraz
 
-1. **Osoba 1 — frontend:** tworzy scaffold Next.js i `package-lock.json` w repozytorium,
+1. **Osoba 1 — frontend:** tworzy scaffold Next.js i lockfile npm (`package-lock.json`) w repozytorium,
    przygotowuje listę na mockach oraz komponent MapLibre.
 2. **Osoba 2 — backend:** dodaje Drizzle, migracje, idempotentny seed 20 obiektów,
    `GET /api/health` i `GET /api/places` w Route Handlers Next.js.
@@ -74,11 +74,11 @@ chat goes brrr...
 
 ## Frontend – uruchomienie
 
-Wymagania: Node.js 20.9+ i npm (dostarczany razem z Node.js).
+Wymagania: Node.js 20.9+ (npm jest instalowany razem z Node.js).
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+npm run dev    # http://localhost:3000
 npm run lint
 npm run typecheck
 npm run build

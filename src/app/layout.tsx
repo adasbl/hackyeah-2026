@@ -6,7 +6,7 @@ import { SiteFooter } from '@/components/site-footer';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'fit-pass-finder – wyszukiwarka obiektów sportowych', template: '%s | fit-pass-finder' },
+  title: { default: 'Fit Pass Finder', template: '%s | Fit Pass Finder' },
   description:
     'Znajdź siłownię, basen, jogę lub ściankę i sprawdź, czy obiekt deklaruje akceptację kart MultiSport, BeActive, Medicover Sport lub PZU Sport.',
 };
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="pl" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="flex min-h-dvh flex-col font-sans">
         <SiteHeader />
-        <main className="flex-1">{children}</main>
+        <main className="flex flex-1 flex-col">{children}</main>
         <SiteFooter />
       </body>
     </html>
