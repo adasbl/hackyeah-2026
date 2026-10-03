@@ -1,3 +1,4 @@
+/** Warstwa dostępu do danych dla frontendu, korzystająca z bazy. */
 import 'server-only';
 import { connection } from 'next/server';
 import type { PlacesQuery } from '@repo/types';

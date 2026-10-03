@@ -18,7 +18,7 @@ Frontend odczytuje opublikowane obiekty z bazy przy każdym żądaniu.
 
 ```powershell
 docker compose up -d db
-docker compose ps 
+docker compose ps
 ```
 
 Jeśli nie masz jeszcze `.env.local`, skopiuj `.env.example`:
