@@ -9,6 +9,7 @@
  *   dopiero przycisk „Przybliż do mojej lokalizacji”.
  */
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { createElement as createIcon, Dumbbell, Flower2, HeartPulse, Mountain, Target, Waves, type IconNode } from 'lucide';
 import { AlertCircle, Loader2, MapPin } from 'lucide-react';
 import * as maplibregl from 'maplibre-gl';
 import { useRouter } from 'next/navigation';
@@ -34,6 +35,29 @@ const MARKER_COLORS: Record<CategorySlug, string> = {
   joga: '#10b981',
   wspinaczka: '#f59e0b',
   squash: '#6366f1',
+};
+
+/** Ikony w pinezkach – te same co w category-icon.tsx, ale z paczki `lucide` (czysty DOM, bez Reacta). */
+const MARKER_ICONS: Record<CategorySlug, IconNode> = {
+  silownia: Dumbbell,
+  basen: Waves,
+  fitness: HeartPulse,
+  joga: Flower2,
+  wspinaczka: Mountain,
+  squash: Target,
+};
+
+/** Dymek nad pinezką: czubek pinezki jest w punkcie, a jej „główka” ~22 px wyżej. */
+const PIN_POPUP_OFFSET: maplibregl.Offset = {
+  center: [0, -22],
+  top: [0, 4],
+  'top-left': [0, 4],
+  'top-right': [0, 4],
+  bottom: [0, -38],
+  'bottom-left': [0, -38],
+  'bottom-right': [0, -38],
+  left: [14, -22],
+  right: [-14, -22],
 };
 
 export interface PlacesMapFilters {
@@ -178,9 +202,11 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
     }
     for (const place of places) {
       if (markers.has(place.id)) continue;
-      const marker = new maplibregl.Marker({ element: createPin(place) })
+      const marker = new maplibregl.Marker({ element: createPin(place), anchor: 'bottom' })
         .setLngLat([place.location.lng, place.location.lat])
-        .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false, maxWidth: '260px' }).setDOMContent(createPopup(place, routerRef)))
+        .setPopup(
+          new maplibregl.Popup({ offset: PIN_POPUP_OFFSET, closeButton: false, maxWidth: '260px' }).setDOMContent(createPopup(place, routerRef)),
+        )
         .addTo(map);
       markers.set(place.id, marker);
     }
@@ -279,26 +305,47 @@ function createUserDot() {
   el.className = 'maplibregl-user-location-dot';
   el.setAttribute('aria-label', 'Twoja lokalizacja');
   el.setAttribute('role', 'img');
+  el.style.zIndex = '1'; // zawsze nad pinezkami obiektów
   return el;
 }
 
 /**
- * Kropka w kolorze kategorii. Element DOM tworzony ręcznie, bo MapLibre nie renderuje Reacta.
- * Zewnętrzny div pozycjonuje MapLibre (przez `transform`), a powiększenie po najechaniu jest na wewnętrznej
- * kropce – gdyby `scale` był na zewnętrznym elemencie, pinezka „uciekałaby” spod kursora.
+ * Pinezka obiektu: „łezka” w kolorze kategorii z białą ikoną w środku – kształtem odróżnia się od okrągłej
+ * kropki użytkownika. Element DOM tworzony ręcznie, bo MapLibre nie renderuje Reacta.
+ * Zewnętrzny div pozycjonuje MapLibre (przez `transform`, anchor: 'bottom' → czubek w punkcie), a powiększenie
+ * po najechaniu jest na wewnętrznym elemencie (od dołu, żeby czubek stał w miejscu) – gdyby `scale` był na
+ * zewnętrznym, pinezka „uciekałaby” spod kursora.
  * div, nie <button>: MapLibre sam dodaje role="button", tabindex i obsługę Enter/Spacji, gdy pinezka ma dymek.
  */
 function createPin(place: MapPlace) {
   const el = document.createElement('div');
   el.title = place.name;
   el.setAttribute('aria-label', `${place.name} – pokaż szczegóły`);
-  el.className = 'group cursor-pointer p-1';
+  el.className = 'group cursor-pointer';
 
-  const dot = document.createElement('span');
-  dot.className = 'block size-4 rounded-full border-2 border-white shadow-md transition-[scale] group-hover:scale-125';
-  dot.style.backgroundColor = MARKER_COLORS[place.category];
+  const body = document.createElement('div');
+  body.className = 'relative h-9 w-7 origin-bottom drop-shadow-md transition-[scale] group-hover:scale-115';
 
-  el.append(dot);
+  const NS = 'http://www.w3.org/2000/svg';
+  const shape = document.createElementNS(NS, 'svg');
+  shape.setAttribute('viewBox', '0 0 28 36');
+  shape.setAttribute('class', 'absolute inset-0 size-full');
+  shape.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', 'M14 35C14 35 27 23 27 13.5A13 13 0 0 0 1 13.5C1 23 14 35 14 35Z');
+  path.setAttribute('fill', MARKER_COLORS[place.category]);
+  path.setAttribute('stroke', 'white');
+  path.setAttribute('stroke-width', '2');
+  shape.append(path);
+
+  const icon = createIcon(MARKER_ICONS[place.category], {
+    class: 'absolute left-1/2 top-[13.5px] size-3.5 -translate-x-1/2 -translate-y-1/2 text-white',
+    'stroke-width': 2.5,
+    'aria-hidden': 'true',
+  });
+
+  body.append(shape, icon);
+  el.append(body);
   return el;
 }
 

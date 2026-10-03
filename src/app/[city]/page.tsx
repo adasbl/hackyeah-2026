@@ -48,7 +48,8 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
     <div className="relative isolate">
       <Backdrop />
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="animate-fade-up">
+        {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
+        <div className="relative z-20 animate-fade-up">
           <SearchForm
             key={`${city}|${filters.category}|${filters.cards.join()}`}
             variant="compact"
