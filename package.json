@@ -13,6 +13,8 @@
     "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
+    "@emnapi/core": "1.11.3",
+    "@emnapi/runtime": "1.11.3",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^17.4.2",
