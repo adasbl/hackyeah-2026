@@ -10,9 +10,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "dotenv": "^18.0.5",
+    "drizzle-orm": "^0.45.3",
     "geist": "^1.7.2",
-    "lucide-react": "^1.51.0",
+    "lucide-react": "1.49.0",
     "next": "15.5.27",
+    "postgres": "^3.4.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^4.6.5"
@@ -23,9 +26,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "15.5.27",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.28.0",
