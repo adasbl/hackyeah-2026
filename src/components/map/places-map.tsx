@@ -74,6 +74,9 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
     let disposed = false;
 
     const [w, s, e, n] = bboxOf(initialPlacesRef.current.map((p) => p.location));
+    // Na ekranach dotykowych jeden palec przewija stronę, a mapę przesuwa się dwoma palcami –
+    // inaczej mapa „łapie” przewijanie i nie da się zjechać do listy.
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE_URL,
@@ -82,6 +85,12 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
       attributionControl: { compact: true },
       dragRotate: false,
       pitchWithRotate: false,
+      cooperativeGestures: isTouch,
+      locale: {
+        'CooperativeGesturesHandler.MobileHelpText': 'Przesuń mapę dwoma palcami',
+        'CooperativeGesturesHandler.WindowsHelpText': 'Użyj Ctrl + kółko myszy, aby przybliżyć mapę',
+        'CooperativeGesturesHandler.MacHelpText': 'Użyj ⌘ + kółko myszy, aby przybliżyć mapę',
+      },
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -143,7 +152,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
   }, [places]);
 
   return (
-    <div className="relative h-[360px] overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 shadow-sm sm:h-[440px]">
+    <div className="relative h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 shadow-sm sm:h-[440px]">
       <div ref={containerRef} className="h-full w-full" />
       <MapStatus status={status} shown={places.length} total={total} />
     </div>
