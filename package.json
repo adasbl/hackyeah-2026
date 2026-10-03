@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -41,6 +42,6 @@
     "postcss": "^8.5.23"
   },
   "engines": {
-    "node": ">=20.9"
+    "node": "24.x"
   }
 }
