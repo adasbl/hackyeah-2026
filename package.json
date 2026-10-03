@@ -8,14 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:seed": "tsx src/db/seed.ts",
-    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
+    "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
-    "dotenv": "^18.0.5",
-    "drizzle-orm": "^0.45.3",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
     "geist": "^1.7.2",
-    "lucide-react": "1.49.0",
+    "lucide-react": "^1.51.0",
+    "maplibre-gl": "^6.11.2",
     "next": "15.5.27",
     "postgres": "^3.4.9",
     "react": "19.1.0",
@@ -37,6 +37,9 @@
     "typescript": "^5"
   },
   "packageManager": "npm@11.6.2",
+  "overrides": {
+    "postcss": "^8.5.23"
+  },
   "engines": {
     "node": ">=20.9"
   }
