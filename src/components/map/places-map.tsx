@@ -3,8 +3,13 @@
 /**
  * Mapa obiektów (MapLibre GL JS).
  * - wygląd mapy: NEXT_PUBLIC_MAP_STYLE_URL, a gdy pusty – darmowy styl OpenFreeMap,
- * - start: pinezki z serwera (wyniki dla miasta i filtrów), widok dopasowany do nich,
- * - po przesunięciu / przybliżeniu (z opóźnieniem 300 ms) pobiera obiekty z widocznego prostokąta (bbox).
+ * - start: punkty z serwera (wyniki dla miasta i filtrów), widok dopasowany do nich,
+ * - po przesunięciu / przybliżeniu (z opóźnieniem 300 ms) pobiera obiekty z widocznego prostokąta (bbox),
+ * - przy oddaleniu bliskie obiekty łączą się w klastry: kółko z liczbą i pierścieniem w kolorach kategorii;
+ *   kliknięcie klastra przybliża mapę tak, żeby się rozpadł,
+ * - przy wyszukiwaniu „w pobliżu” rysuje okrąg promienia,
+ * - od razu pyta o zgodę na lokalizację; po zgodzie pokazuje kropkę użytkownika, ale mapę przybliża
+ *   dopiero przycisk „Przybliż do mojej lokalizacji”.
  */
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { AlertCircle, Loader2, MapPin } from 'lucide-react';
@@ -14,49 +19,81 @@ import { useEffect, useRef, useState } from 'react';
 import type { CardProviderSlug, CategorySlug } from '@repo/types';
 import { categoryOf } from '@/lib/catalog';
 import { getMapPlaces } from '@/lib/data/map-actions';
-import { bboxOf, normalizeBbox, type Bbox, type MapPlace } from '@/lib/geo';
+import { bboxOf, circlePolygon, normalizeBbox, type Bbox, type MapPlace } from '@/lib/geo';
+import {
+  CLUSTER_PROPERTIES,
+  createCluster,
+  createPin,
+  createUserDot,
+  MAP_STYLE_URL,
+  PIN_POPUP_OFFSET,
+  type CategoryCounts,
+} from './markers';
 
-// MapLibre v6 nie znajdzie workera sam w paczce Next.js – plik kopiuje scripts/copy-maplibre-worker.mjs.
-maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
-
-const MAP_STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty';
 const DEBOUNCE_MS = 300;
+/** Przybliżenie po kliknięciu „moja lokalizacja” (jeśli mapa jest już bliżej – zostaje). */
+const LOCATE_ZOOM = 14;
+/** Od tego przybliżenia nie łączymy już punktów w klastry (niżej = wcześniej widać pojedyncze pinezki). */
+const CLUSTER_MAX_ZOOM = 12;
+/** Promień (px), w którym punkty łączą się w klaster – mały, żeby klastry szybko się rozpadały. */
+const CLUSTER_RADIUS = 34;
 
-/** Kolory pinezek – te same odcienie co kafelki kategorii w catalog.ts (Tailwind *-500). */
-const MARKER_COLORS: Record<CategorySlug, string> = {
-  silownia: '#f43f5e',
-  basen: '#0ea5e9',
-  fitness: '#d946ef',
-  joga: '#10b981',
-  wspinaczka: '#f59e0b',
-  squash: '#6366f1',
-};
+const SOURCE = 'places';
+const RADIUS_SOURCE = 'search-radius';
 
 export interface PlacesMapFilters {
   category?: CategorySlug;
   cards: CardProviderSlug[];
   q?: string;
+  openNow?: boolean;
+  lat?: number;
+  lng?: number;
+  radius?: number;
 }
 
 interface Props {
   initialPlaces: MapPlace[];
   initialTotal: number;
   filters: PlacesMapFilters;
+  /** Elementy na mapie (np. filtry „Otwarte teraz”, „W pobliżu mnie”) – zostają widoczne także na pełnym ekranie. */
+  overlay?: React.ReactNode;
+  /** Klasy wysokości kontenera mapy. */
+  heightClassName?: string;
 }
 
 type Status = 'idle' | 'loading' | 'error';
 
-export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
+type PointProps = { id: string; slug: string; name: string; category: CategorySlug; street: string; city: string };
+
+function toGeoJson(places: MapPlace[]): GeoJSON.FeatureCollection<GeoJSON.Point, PointProps> {
+  return {
+    type: 'FeatureCollection',
+    features: places.map((p) => ({
+      type: 'Feature',
+      id: Number(p.id) || undefined,
+      geometry: { type: 'Point', coordinates: [p.location.lng, p.location.lat] },
+      properties: { id: p.id, slug: p.slug, name: p.name, category: p.category, street: p.street, city: p.city },
+    })),
+  };
+}
+
+export const MAP_HEIGHT = 'h-[68dvh] min-h-[420px] sm:h-[72dvh] sm:max-h-[820px]';
+
+export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heightClassName = MAP_HEIGHT }: Props) {
   const router = useRouter();
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef(new Map<string, maplibregl.Marker>());
   const requestIdRef = useRef(0);
+  /** Wersja danych – klastry dostają nowe ID po każdej zmianie danych, więc ich znaczniki tworzymy od nowa. */
+  const dataVersionRef = useRef(0);
+  const syncMarkersRef = useRef<() => void>(() => {});
 
   // Aktualne wartości dla handlerów mapy (mapa tworzona jest tylko raz).
   const filtersRef = useRef(filters);
   const routerRef = useRef(router);
   const initialPlacesRef = useRef(initialPlaces);
+  const placesRef = useRef(initialPlaces);
   useEffect(() => {
     filtersRef.current = filters;
     routerRef.current = router;
@@ -69,11 +106,14 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
   // 1) Utworzenie mapy – raz, po zamontowaniu.
   useEffect(() => {
     if (!containerRef.current) return;
-    const markers = markersRef.current;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
 
-    const [w, s, e, n] = bboxOf(initialPlacesRef.current.map((p) => p.location));
+    const { lat, lng, radius } = filtersRef.current;
+    const center = lat !== undefined && lng !== undefined ? { lat, lng } : null;
+    const points = initialPlacesRef.current.map((p) => p.location);
+    if (center) points.push(center);
+    const [w, s, e, n] = bboxOf(points);
     // Na ekranach dotykowych jeden palec przewija stronę, a mapę przesuwa się dwoma palcami –
     // inaczej mapa „łapie” przewijanie i nie da się zjechać do listy.
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
@@ -90,11 +130,152 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
         'CooperativeGesturesHandler.MobileHelpText': 'Przesuń mapę dwoma palcami',
         'CooperativeGesturesHandler.WindowsHelpText': 'Użyj Ctrl + kółko myszy, aby przybliżyć mapę',
         'CooperativeGesturesHandler.MacHelpText': 'Użyj ⌘ + kółko myszy, aby przybliżyć mapę',
+        'FullscreenControl.Enter': 'Mapa na pełnym ekranie',
+        'FullscreenControl.Exit': 'Zamknij pełny ekran',
+        'NavigationControl.ZoomIn': 'Przybliż',
+        'NavigationControl.ZoomOut': 'Oddal',
       },
     });
     map.touchZoomRotate.disableRotation();
+    // Pełny ekran obejmuje cały kontener (razem z filtrami na mapie), nie tylko samą mapę.
+    // Gdy przeglądarka nie ma Fullscreen API (np. iPhone), MapLibre rozciąga kontener na całe okno.
+    map.addControl(new maplibregl.FullscreenControl({ container: wrapperRef.current ?? undefined }), 'top-right');
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     mapRef.current = map;
+
+    // Lokalizacja użytkownika: watchPosition od razu wywołuje pytanie o zgodę w przeglądarce.
+    // Kropkę pokazujemy, ale widoku nie ruszamy – przybliża dopiero kliknięcie przycisku.
+    let userPos: [lng: number, lat: number] | undefined;
+    let userMarker: maplibregl.Marker | undefined;
+    let watchId: number | undefined;
+    const locate = new LocateControl(() => {
+      if (userPos) map.flyTo({ center: userPos, zoom: Math.max(map.getZoom(), LOCATE_ZOOM) });
+    });
+    map.addControl(locate, 'top-right');
+
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        ({ coords }) => {
+          if (disposed) return;
+          userPos = [coords.longitude, coords.latitude];
+          if (userMarker) userMarker.setLngLat(userPos);
+          else userMarker = new maplibregl.Marker({ element: createUserDot() }).setLngLat(userPos).addTo(map);
+          locate.setState('ready');
+        },
+        (err) => {
+          if (disposed || userPos) return; // pojedynczy timeout nie kasuje znanej już pozycji
+          locate.setState(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
+        },
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 20_000 },
+      );
+    } else {
+      locate.setState('unavailable');
+    }
+
+    // --- Znaczniki HTML dla punktów i klastrów ------------------------------------------------
+    // Źródło GeoJSON z `cluster: true` liczy klastry; my rysujemy je jako elementy HTML (ładniejsze niż
+    // warstwa circle i spójne z pinezkami). Po każdej zmianie widoku synchronizujemy znaczniki z tym,
+    // co źródło ma aktualnie w widocznych kafelkach.
+    const pinMarkers = new Map<string, maplibregl.Marker>();
+    const clusterMarkers = new Map<string, maplibregl.Marker>();
+
+    function syncMarkers() {
+      if (!map.getSource(SOURCE)) return;
+      const nextPins = new Set<string>();
+      const nextClusters = new Set<string>();
+
+      for (const f of map.querySourceFeatures(SOURCE)) {
+        if (f.geometry.type !== 'Point') continue;
+        const [fx, fy] = f.geometry.coordinates;
+        const props = f.properties as Record<string, unknown>;
+
+        if (props.cluster) {
+          const clusterId = Number(props.cluster_id);
+          const key = `${dataVersionRef.current}:${clusterId}`;
+          if (nextClusters.has(key)) continue; // ten sam klaster bywa w kilku kafelkach
+          nextClusters.add(key);
+          if (clusterMarkers.has(key)) continue;
+          const count = Number(props.point_count);
+          const counts: CategoryCounts = {};
+          for (const c of Object.keys(CLUSTER_PROPERTIES)) counts[c as CategorySlug] = Number(props[c] ?? 0);
+          const el = createCluster(count, counts);
+          const zoomIn = async () => {
+            const src = map.getSource<maplibregl.GeoJSONSource>(SOURCE);
+            if (!src) return;
+            const zoom = await src.getClusterExpansionZoom(clusterId).catch(() => map.getZoom() + 2);
+            // +1 poziom ponad minimum – klaster od razu rozpada się na pinezki / mniejsze grupy.
+            map.easeTo({ center: [fx, fy], zoom: Math.min(zoom + 1, 17), duration: 500 });
+          };
+          el.addEventListener('click', zoomIn);
+          el.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+              ev.preventDefault();
+              void zoomIn();
+            }
+          });
+          clusterMarkers.set(key, new maplibregl.Marker({ element: el }).setLngLat([fx, fy]).addTo(map));
+          continue;
+        }
+
+        const place = props as unknown as PointProps;
+        if (nextPins.has(place.id)) continue;
+        nextPins.add(place.id);
+        if (pinMarkers.has(place.id)) continue;
+        const marker = new maplibregl.Marker({ element: createPin(place), anchor: 'bottom' })
+          .setLngLat([fx, fy])
+          .setPopup(
+            new maplibregl.Popup({ offset: PIN_POPUP_OFFSET, closeButton: false, maxWidth: '260px' }).setDOMContent(
+              createPopup(place, routerRef),
+            ),
+          )
+          .addTo(map);
+        pinMarkers.set(place.id, marker);
+      }
+
+      for (const [key, m] of clusterMarkers) {
+        if (!nextClusters.has(key)) {
+          m.remove();
+          clusterMarkers.delete(key);
+        }
+      }
+      for (const [id, m] of pinMarkers) {
+        // Otwarty dymek zostawiamy, dopóki punkt jest w danych – inaczej znikałby przy lekkim przesunięciu.
+        if (!nextPins.has(id) && !(m.getPopup()?.isOpen() && placesRef.current.some((p) => p.id === id))) {
+          m.remove();
+          pinMarkers.delete(id);
+        }
+      }
+    }
+    syncMarkersRef.current = syncMarkers;
+
+    map.on('load', () => {
+      map.addSource(SOURCE, {
+        type: 'geojson',
+        data: toGeoJson(placesRef.current),
+        cluster: true,
+        clusterRadius: CLUSTER_RADIUS,
+        clusterMaxZoom: CLUSTER_MAX_ZOOM,
+        clusterProperties: CLUSTER_PROPERTIES,
+      });
+      // Niewidoczna warstwa – bez niej MapLibre nie ładuje kafelków źródła i querySourceFeatures nic nie zwraca.
+      map.addLayer({ id: 'places-anchor', type: 'circle', source: SOURCE, paint: { 'circle-radius': 0, 'circle-opacity': 0 } });
+
+      if (center && radius) {
+        map.addSource(RADIUS_SOURCE, { type: 'geojson', data: circlePolygon(center, radius) });
+        map.addLayer({ id: 'radius-fill', type: 'fill', source: RADIUS_SOURCE, paint: { 'fill-color': '#3b6cff', 'fill-opacity': 0.07 } });
+        map.addLayer({
+          id: 'radius-line',
+          type: 'line',
+          source: RADIUS_SOURCE,
+          paint: { 'line-color': '#3b6cff', 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [3, 2] },
+        });
+      }
+    });
+    map.on('sourcedata', (e) => {
+      if (e.sourceId === SOURCE && e.isSourceLoaded) syncMarkers();
+    });
+    map.on('move', syncMarkers);
+    map.on('moveend', syncMarkers);
 
     async function loadVisible() {
       const b = map.getBounds();
@@ -121,39 +302,31 @@ export function PlacesMap({ initialPlaces, initialTotal, filters }: Props) {
     return () => {
       disposed = true;
       clearTimeout(timer);
-      markers.forEach((m) => m.remove());
-      markers.clear();
+      if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+      userMarker?.remove();
+      pinMarkers.forEach((m) => m.remove());
+      clusterMarkers.forEach((m) => m.remove());
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // 2) Synchronizacja pinezek z listą `places` (dodaj nowe, usuń zbędne).
+  // 2) Nowe dane → podmiana danych źródła (MapLibre przelicza klastry, a znaczniki synchronizują się same).
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const markers = markersRef.current;
-    const nextIds = new Set(places.map((p) => p.id));
-
-    for (const [id, marker] of markers) {
-      if (!nextIds.has(id)) {
-        marker.remove();
-        markers.delete(id);
-      }
-    }
-    for (const place of places) {
-      if (markers.has(place.id)) continue;
-      const marker = new maplibregl.Marker({ element: createPin(place) })
-        .setLngLat([place.location.lng, place.location.lat])
-        .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false, maxWidth: '260px' }).setDOMContent(createPopup(place, routerRef)))
-        .addTo(map);
-      markers.set(place.id, marker);
-    }
+    placesRef.current = places;
+    const src = mapRef.current?.getSource<maplibregl.GeoJSONSource>(SOURCE);
+    if (!src) return;
+    dataVersionRef.current++;
+    src.setData(toGeoJson(places));
   }, [places]);
 
   return (
-    <div className="relative h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 shadow-sm sm:h-[440px]">
+    <div
+      ref={wrapperRef}
+      className={`relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 shadow-sm [&:fullscreen]:rounded-none [&.maplibregl-pseudo-fullscreen]:rounded-none ${heightClassName}`}
+    >
       <div ref={containerRef} className="h-full w-full" />
+      {overlay && <div className="absolute left-3 right-14 top-3 z-10">{overlay}</div>}
       <MapStatus status={status} shown={places.length} total={total} />
     </div>
   );
@@ -183,7 +356,7 @@ function MapStatus({ status, shown, total }: { status: Status; shown: number; to
   }
   return (
     <p
-      className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm backdrop-blur"
+      className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm backdrop-blur"
       aria-live="polite"
     >
       {content}
@@ -191,28 +364,55 @@ function MapStatus({ status, shown, total }: { status: Status; shown: number; to
   );
 }
 
+type LocateState = 'waiting' | 'ready' | 'denied' | 'unavailable';
+
+const LOCATE_LABELS: Record<LocateState, string> = {
+  waiting: 'Czekam na Twoją lokalizację…',
+  ready: 'Przybliż do mojej lokalizacji',
+  denied: 'Brak zgody na lokalizację – możesz ją włączyć w ustawieniach przeglądarki',
+  unavailable: 'Lokalizacja niedostępna',
+};
+
 /**
- * Kropka w kolorze kategorii. Element DOM tworzony ręcznie, bo MapLibre nie renderuje Reacta.
- * Zewnętrzny div pozycjonuje MapLibre (przez `transform`), a powiększenie po najechaniu jest na wewnętrznej
- * kropce – gdyby `scale` był na zewnętrznym elemencie, pinezka „uciekałaby” spod kursora.
- * div, nie <button>: MapLibre sam dodaje role="button", tabindex i obsługę Enter/Spacji, gdy pinezka ma dymek.
+ * Przycisk „przybliż do mojej lokalizacji” w tym samym stylu co przyciski +/− (klasy i ikona z CSS MapLibre).
+ * Własny zamiast GeolocateControl, bo ten przy uruchomieniu sam przesuwa mapę, a my chcemy to robić dopiero po kliknięciu.
  */
-function createPin(place: MapPlace) {
-  const el = document.createElement('div');
-  el.title = place.name;
-  el.setAttribute('aria-label', `${place.name} – pokaż szczegóły`);
-  el.className = 'group cursor-pointer p-1';
+class LocateControl implements maplibregl.IControl {
+  private readonly container = document.createElement('div');
+  private readonly button = document.createElement('button');
 
-  const dot = document.createElement('span');
-  dot.className = 'block size-4 rounded-full border-2 border-white shadow-md transition-[scale] group-hover:scale-125';
-  dot.style.backgroundColor = MARKER_COLORS[place.category];
+  constructor(onClick: () => void) {
+    this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+    this.button.type = 'button';
+    this.button.className = 'maplibregl-ctrl-geolocate';
+    const icon = document.createElement('span');
+    icon.className = 'maplibregl-ctrl-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    this.button.append(icon);
+    this.button.addEventListener('click', onClick);
+    this.container.append(this.button);
+    this.setState('waiting');
+  }
 
-  el.append(dot);
-  return el;
+  setState(state: LocateState) {
+    const label = LOCATE_LABELS[state];
+    this.button.disabled = state !== 'ready';
+    this.button.setAttribute('aria-label', label);
+    // title na kontenerze – na wyłączonym przycisku część przeglądarek nie pokazuje podpowiedzi.
+    this.container.title = label;
+  }
+
+  onAdd() {
+    return this.container;
+  }
+
+  onRemove() {
+    this.container.remove();
+  }
 }
 
 /** Dymek po kliknięciu pinezki. textContent zamiast innerHTML – nazwy z bazy nie mogą wstrzyknąć HTML. */
-function createPopup(place: MapPlace, routerRef: React.RefObject<ReturnType<typeof useRouter>>) {
+function createPopup(place: PointProps, routerRef: React.RefObject<ReturnType<typeof useRouter>>) {
   const root = document.createElement('div');
   root.className = 'font-sans';
 

@@ -30,3 +30,18 @@ export async function getPlaceBySlug(slug: string) {
 export async function getCityOptions() {
   return (await getService()).getCityOptions();
 }
+
+type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
+
+export async function searchMapPoints(query: Filterable & { limit?: number }) {
+  return (await getService()).searchMapPoints(query);
+}
+
+export async function getPlacesBySlugs(slugs: string[]) {
+  if (!slugs.length) return [];
+  return (await getService()).getPlacesBySlugs(slugs);
+}
+
+export async function getCardStats(query: Omit<Filterable, 'cards'>) {
+  return (await getService()).getCardStats(query);
+}

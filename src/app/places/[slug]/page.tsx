@@ -1,11 +1,15 @@
-import { Globe, MapPin, Phone } from 'lucide-react';
+import { ExternalLink, Globe, Navigation, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { CardStatusBadge } from '@/components/card-status-badge';
 import { Backdrop } from '@/components/backdrop';
 import { CategoryBadge } from '@/components/category-icon';
-import { StatusLegend } from '@/components/status-legend';
+import { FavoriteButton } from '@/components/favorites/favorite-button';
+import { BackButton } from '@/components/navigation/back-button';
+import { PlaceMiniMapLazy } from '@/components/map/places-map-lazy';
+import { OpenStatus } from '@/components/open-status';
 import {
   CARD_PROVIDERS,
   categoryOf,
@@ -17,6 +21,7 @@ import {
   SOURCE_TYPE_LABEL,
 } from '@/lib/catalog';
 import { getPlaceBySlug } from '@/lib/data/places';
+import { entryCoversDay, warsawDayIndex } from '@/lib/opening-hours';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -30,34 +35,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PlaceDetailsPage({ params }: Props) {
+  // Status „otwarte teraz” zależy od chwili wejścia – strona nie może być zbudowana raz i zapamiętana.
+  await connection();
   const place = await getPlaceBySlug((await params).slug);
   if (!place) notFound();
 
   const category = categoryOf(place.category);
   const claims = CARD_PROVIDERS.map((p) => place.cards.find((c) => c.provider === p.slug)).filter((c) => c !== undefined);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.location.lat},${place.location.lng}`;
+  const { lat, lng } = place.location;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  const today = warsawDayIndex();
 
   return (
     <div className="relative isolate">
     <Backdrop />
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <nav className="mb-4 text-sm text-slate-500" aria-label="Okruszki">
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+      <BackButton fallbackHref={`/${place.address.citySlug}`} label="Wróć do wyników" />
+      <nav className="text-sm text-slate-500" aria-label="Okruszki">
         <Link href="/" className="hover:text-ink">Start</Link>
         <span className="mx-1.5">/</span>
         <Link href={`/${place.address.citySlug}`} className="hover:text-ink">{place.address.city}</Link>
         <span className="mx-1.5">/</span>
         <span className="text-slate-700">{place.name}</span>
       </nav>
+      </div>
 
-      <header className="flex animate-fade-up items-start gap-4">
+      <header className="flex animate-fade-up flex-wrap items-start gap-4">
         <CategoryBadge category={place.category} size="lg" />
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{category.name}</p>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{place.name}</h1>
           <p className="mt-1 text-slate-600">
             {place.address.street}, {place.address.postalCode} {place.address.city}
           </p>
+          <OpenStatus hours={place.openingHours} className="mt-2" />
         </div>
+        <FavoriteButton slug={place.slug} name={place.name} variant="pill" />
       </header>
 
       {place.description && <p className="mt-4 max-w-2xl text-slate-700">{place.description}</p>}
@@ -122,17 +137,14 @@ export default async function PlaceDetailsPage({ params }: Props) {
               );
             })}
           </ul>
-
-          <details className="mt-5 rounded-xl bg-slate-50 p-4">
-            <summary className="cursor-pointer text-sm font-medium">Co oznaczają statusy?</summary>
-            <div className="mt-3">
-              <StatusLegend />
-            </div>
-          </details>
         </section>
 
         <aside className="space-y-6">
-          <section aria-labelledby="contact-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <section aria-labelledby="contact-h" className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="h-56 border-b border-slate-200/80">
+              <PlaceMiniMapLazy name={place.name} category={place.category} location={place.location} />
+            </div>
+            <div className="p-6">
             <h2 id="contact-h" className="mb-3 font-semibold">Kontakt i dojazd</h2>
             <ul className="space-y-2 text-sm">
               {place.phone && (
@@ -149,24 +161,45 @@ export default async function PlaceDetailsPage({ params }: Props) {
                   </a>
                 </li>
               )}
-              <li className="flex items-center gap-2">
-                <MapPin className="size-4 text-slate-400" aria-hidden />
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">
-                  Pokaż na mapie
-                </a>
-              </li>
             </ul>
+            <div className="mt-4 space-y-2">
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition hover:shadow-lg active:scale-[0.98]"
+              >
+                <Navigation className="size-4" aria-hidden />
+                Wyznacz trasę
+              </a>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-ink"
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                Otwórz w Google Maps
+              </a>
+            </div>
+            </div>
           </section>
 
           <section aria-labelledby="hours-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
             <h2 id="hours-h" className="mb-3 font-semibold">Godziny otwarcia</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              {place.openingHours.map((h) => (
-                <div key={h.days} className="contents">
-                  <dt className="text-slate-500">{h.days}</dt>
-                  <dd className="tabular-nums">{h.hours}</dd>
-                </div>
-              ))}
+              {place.openingHours.map((h) => {
+                const isToday = entryCoversDay(h, today);
+                return (
+                  <div key={h.days} className="contents">
+                    <dt className={isToday ? 'font-semibold text-ink' : 'text-slate-500'}>
+                      {h.days}
+                      {isToday && <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">dziś</span>}
+                    </dt>
+                    <dd className={`tabular-nums ${isToday ? 'font-semibold' : ''}`}>{h.hours}</dd>
+                  </div>
+                );
+              })}
             </dl>
           </section>
 

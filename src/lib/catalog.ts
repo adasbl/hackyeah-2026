@@ -107,6 +107,18 @@ export function cityName(slug: string) {
     .join(' ');
 }
 
+/** „w Warszawie” – miejscownik dla znanych miast, dla pozostałych bezpieczne „w mieście X”. */
+const CITY_LOCATIVE: Record<string, string> = {
+  warszawa: 'w Warszawie',
+  krakow: 'w Krakowie',
+  gdansk: 'w Gdańsku',
+  wroclaw: 'we Wrocławiu',
+  poznan: 'w Poznaniu',
+  [ALL_CITIES_SLUG]: 'w całej Polsce',
+};
+
+export const cityLocative = (slug: string, name = cityName(slug)) => CITY_LOCATIVE[slug] ?? `w mieście ${name}`;
+
 const dateFmt = new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Warsaw' });
 export const formatDate = (iso: string) => dateFmt.format(new Date(iso));
 

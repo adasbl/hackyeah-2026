@@ -1,7 +1,7 @@
 # Kontrakt API – propozycja frontendu (Osoba 1 → Osoba 2)
 
 Typy TypeScript: [`packages/types/index.ts`](../packages/types/index.ts) (import: `@repo/types`).
-Frontend korzysta dziś z mocka o dokładnie tym kształcie (`src/mocks/places.ts`), więc po uzgodnieniu wystarczy podmienić funkcje w `src/lib/data/places.ts`.
+Frontend pobiera dane z PostgreSQL przez `src/lib/data/places.ts` i serwis `src/server/places.ts`. Poniższe ścieżki HTTP opisują kontrakt; mapa i ulubione korzystają obecnie z Server Actions.
 
 ## Konwencje
 
@@ -23,7 +23,9 @@ Frontend korzysta dziś z mocka o dokładnie tym kształcie (`src/mocks/places.t
 | `city` | `warszawa` | slug miasta; `polska` lub brak = cała Polska |
 | `category` | `basen` | slug kategorii |
 | `cards` | `multisport,beactive` | **każda** z kart musi mieć status `accepted` lub `conditional` |
-| `lat`, `lng`, `radius` | `52.23`, `21.01`, `3000` | promień w metrach |
+| `lat`, `lng`, `radius` | `52.23`, `21.01`, `3000` | punkt odniesienia i promień w metrach (`radius` wymaga `lat`/`lng`) |
+| `open` | `1` | tylko obiekty otwarte teraz (czas Europe/Warsaw) |
+| `sort` | `distance` | `name` (domyślnie) albo `distance` – od najbliższych, wymaga `lat`/`lng` |
 | `bbox` | `20.9,52.1,21.1,52.3` | west,south,east,north – dla mapy |
 | `limit`, `offset` | `20`, `0` | domyślnie 20, max 100 |
 
@@ -53,6 +55,8 @@ Odpowiedź `200`:
         }
       ],
       "priceFrom": { "label": "Bilet ulgowy 60 min", "amount": 20, "currency": "PLN", "note": null },
+      "openingHours": [{ "days": "pon–pt", "hours": "6:30–22:00" }, { "days": "sob–niedz", "hours": "8:00–21:00" }],
+      "distanceMeters": 1240,
       "updatedAt": "2026-09-28T08:00:00Z"
     }
   ],
@@ -62,9 +66,31 @@ Odpowiedź `200`:
 }
 ```
 
+`openingHours` jest w elemencie listy, bo lista pokazuje status „otwarte teraz”.
+`distanceMeters` zwracamy tylko, gdy zapytanie ma `lat`/`lng` (odległość w linii prostej, w metrach).
+
 ## GET /api/places/:slug
 
-`PlaceSummary` + pola: `description`, `website`, `phone`, `openingHours: [{ "days": "pon–pt", "hours": "6:30–22:00" }]`, `amenities: string[]`, `prices: Price[]`, `createdAt`.
+`PlaceSummary` + pola: `description`, `website`, `phone`, `amenities: string[]`, `prices: Price[]`, `createdAt`.
+
+## GET /api/places/points (mapa)
+
+Te same filtry co `/api/places` (zwykle z `bbox`), ale lekkie punkty i wyższy limit (do 2000),
+bo mapa sama grupuje je w klastry: `{ "items": [{ "id", "slug", "name", "category", "street", "city", "location" }], "total" }`.
+Przy bardzo dużej liczbie obiektów można później przenieść klastrowanie na serwer (PostGIS `ST_ClusterDBSCAN` / siatka).
+
+## GET /api/stats/cards
+
+Porównanie kart. Filtry jak w `/api/places` (`city`, `category`, `open`, `lat`/`lng`/`radius`), **bez** `cards`.
+
+```json
+{
+  "total": 44,
+  "providers": [
+    { "provider": "multisport", "accepted": 26, "conditional": 8, "notAccepted": 3, "unknown": 7 }
+  ]
+}
+```
 Brak obiektu → `404`.
 
 ## Błędy
@@ -81,3 +107,4 @@ Bez szczegółów bazy i stack trace.
 2. `confidence` jako enum (`high/medium/low`) czy liczba 0–1?
 3. `openingHours`: prosty format do wyświetlania (jak wyżej) czy surowy `opening_hours` z OSM?
 4. Paginacja `limit/offset` czy kursor?
+5. „Otwarte teraz” liczymy z prostego formatu godzin – jeśli przejdziemy na `opening_hours` z OSM, filtr trzeba liczyć w bazie lub w serwisie.

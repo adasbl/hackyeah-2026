@@ -1,12 +1,15 @@
 import { and, asc, count, eq, exists, getTableColumns, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { PlaceDetails, PlaceSummary, PlacesQuery, PlacesResponse } from '@repo/types';
+import { CARD_PROVIDER_SLUGS, type CardStatsResponse, type GeoPoint, type PlaceDetails, type PlaceSummary, type PlacesQuery, type PlacesResponse } from '@repo/types';
 import * as schema from '@/db/schema';
 import { ALL_CITIES_LABEL, ALL_CITIES_SLUG, slugify } from '@/lib/catalog';
+import { distanceMeters, MAP_LIMIT } from '@/lib/geo';
+import { isOpenNow } from '@/lib/opening-hours';
 import { toPlaceDetails, type ClaimRow } from './place-mapper';
 
 const { places, cardProviders, placeCardClaims } = schema;
 type Database = Pick<PostgresJsDatabase<typeof schema>, 'select'>;
+type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
 
 export interface CityOption {
   slug: string;
@@ -14,9 +17,12 @@ export interface CityOption {
   count: number;
 }
 
-function toSummary(place: PlaceDetails): PlaceSummary {
-  const { id, slug, name, category, address, location, cards, priceFrom, updatedAt } = place;
-  return { id, slug, name, category, address, location, cards, priceFrom, updatedAt };
+function toSummary(place: PlaceDetails, point?: GeoPoint): PlaceSummary {
+  const { id, slug, name, category, address, location, cards, priceFrom, openingHours, updatedAt } = place;
+  return {
+    id, slug, name, category, address, location, cards, priceFrom, openingHours, updatedAt,
+    ...(point ? { distanceMeters: Math.round(distanceMeters(point, location)) } : {}),
+  };
 }
 
 function boundedInteger(value: number | undefined, fallback: number, min: number, max: number) {
@@ -41,9 +47,7 @@ export function createPlacesService(database: Database) {
     return rows.map((row) => toPlaceDetails(row, byPlace.get(row.id) ?? []));
   }
 
-  async function searchPlaces(query: PlacesQuery): Promise<PlacesResponse> {
-    const limit = boundedInteger(query.limit, 20, 1, 100);
-    const offset = boundedInteger(query.offset, 0, 0, Number.MAX_SAFE_INTEGER);
+  function buildWhere(query: Filterable) {
     const filters: SQL[] = [eq(places.isPublished, true)];
     if (query.city && query.city !== ALL_CITIES_SLUG) filters.push(eq(places.citySlug, query.city));
     if (query.category) filters.push(eq(places.category, query.category));
@@ -79,20 +83,86 @@ export function createPlacesService(database: Database) {
     }
     if (query.lat !== undefined || query.lng !== undefined || query.radius !== undefined) {
       const { lat, lng, radius } = query;
-      if (lat === undefined || lng === undefined || radius === undefined
-        || ![lat, lng, radius].every(Number.isFinite)
-        || Math.abs(lat) > 90 || Math.abs(lng) > 180 || radius < 0) throw new Error('INVALID_RADIUS');
-      filters.push(sql`extensions.st_dwithin(${places.location}::extensions.geography,
-        extensions.st_setsrid(extensions.st_makepoint(${lng}, ${lat}), 4326)::extensions.geography,
-        ${radius})`);
+      if (lat === undefined || lng === undefined || ![lat, lng].every(Number.isFinite)
+        || Math.abs(lat) > 90 || Math.abs(lng) > 180
+        || (radius !== undefined && (!Number.isFinite(radius) || radius < 0))) throw new Error('INVALID_RADIUS');
+      if (radius !== undefined) {
+        filters.push(sql`extensions.st_dwithin(${places.location}::extensions.geography,
+          extensions.st_setsrid(extensions.st_makepoint(${lng}, ${lat}), 4326)::extensions.geography,
+          ${radius})`);
+      }
     }
 
-    const where = and(...filters);
-    const [rows, totals] = await Promise.all([
-      database.select().from(places).where(where).orderBy(asc(places.name), asc(places.id)).limit(limit).offset(offset),
-      database.select({ total: count() }).from(places).where(where),
-    ]);
-    return { items: (await loadDetails(rows)).map(toSummary), total: totals[0].total, limit, offset };
+    return and(...filters);
+  }
+
+  async function search(query: PlacesQuery, maxLimit: number, defaultLimit: number): Promise<PlacesResponse> {
+    const limit = boundedInteger(query.limit, defaultLimit, 1, maxLimit);
+    const offset = boundedInteger(query.offset, 0, 0, Number.MAX_SAFE_INTEGER);
+    const where = buildWhere(query);
+    const point = query.lat !== undefined && query.lng !== undefined ? { lat: query.lat, lng: query.lng } : undefined;
+    const order = query.sort === 'distance' && point
+      ? [sql`extensions.st_distance(${places.location}::extensions.geography,
+          extensions.st_setsrid(extensions.st_makepoint(${point.lng}, ${point.lat}), 4326)::extensions.geography)`, asc(places.name), asc(places.id)]
+      : [asc(places.name), asc(places.id)];
+    const selection = database.select().from(places).where(where).orderBy(...order);
+    let rows: (typeof places.$inferSelect)[];
+    let total: number;
+    if (query.openNow) {
+      // Godziny mają format aplikacji; filtrujemy przed paginacją i liczeniem wyników.
+      const now = new Date();
+      const opened = (await selection).filter((row) => isOpenNow(row.openingHours, now));
+      total = opened.length;
+      rows = opened.slice(offset, offset + limit);
+    } else {
+      const [page, totals] = await Promise.all([
+        selection.limit(limit).offset(offset),
+        database.select({ total: count() }).from(places).where(where),
+      ]);
+      rows = page;
+      total = totals[0].total;
+    }
+    return { items: (await loadDetails(rows)).map((place) => toSummary(place, point)), total, limit, offset };
+  }
+
+  async function searchPlaces(query: PlacesQuery): Promise<PlacesResponse> {
+    return search(query, 100, 20);
+  }
+
+  async function searchMapPoints(query: Filterable & { limit?: number }) {
+    const { items, total } = await search({ ...query, sort: 'name' }, MAP_LIMIT, MAP_LIMIT);
+    return { items, total };
+  }
+
+  async function getPlacesBySlugs(slugs: string[]): Promise<PlaceSummary[]> {
+    if (!slugs.length) return [];
+    const rows = await database.select().from(places)
+      .where(and(eq(places.isPublished, true), inArray(places.slug, [...new Set(slugs)])));
+    const bySlug = new Map((await loadDetails(rows)).map((place) => [place.slug, toSummary(place)]));
+    return slugs.flatMap((slug) => {
+      const place = bySlug.get(slug);
+      return place ? [place] : [];
+    });
+  }
+
+  async function getCardStats(query: Omit<Filterable, 'cards'>): Promise<CardStatsResponse> {
+    const now = new Date();
+    const rows = await database.select().from(places).where(buildWhere({ ...query, cards: [] }));
+    const matching = query.openNow ? rows.filter((row) => isOpenNow(row.openingHours, now)) : rows;
+    const details = await loadDetails(matching);
+    const providers = CARD_PROVIDER_SLUGS.map((provider) => {
+      const counts = { provider, accepted: 0, conditional: 0, notAccepted: 0, unknown: 0 };
+      for (const place of details) {
+        const claim = place.cards.find((card) => card.provider === provider);
+        const status = claim && (!claim.expiresAt || new Date(claim.expiresAt) > now) ? claim.status : 'unknown';
+        if (status === 'accepted') counts.accepted++;
+        else if (status === 'conditional') counts.conditional++;
+        else if (status === 'not_accepted') counts.notAccepted++;
+        else counts.unknown++;
+      }
+      return counts;
+    });
+    return { total: details.length, providers };
   }
 
   async function getPlaceBySlug(slug: string): Promise<PlaceDetails | null> {
@@ -114,5 +184,5 @@ export function createPlacesService(database: Database) {
     ];
   }
 
-  return { searchPlaces, getPlaceBySlug, getCityOptions };
+  return { searchPlaces, searchMapPoints, getPlaceBySlug, getPlacesBySlugs, getCardStats, getCityOptions };
 }

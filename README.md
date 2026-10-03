@@ -117,4 +117,12 @@ Dane pochodzą z PostgreSQL przez Drizzle. Format danych opisuje [`docs/api-cont
 | `/` | ekran wyszukiwania (miasto, karta, kategoria) |
 | `/warszawa?cards=multisport&category=basen` | wyniki – linkowalne, renderowane na serwerze |
 | `/polska` | wyniki dla całej Polski |
-| `/places/[slug]` | szczegóły obiektu ze statusami kart |
+| `/places/[slug]` | szczegóły obiektu ze statusami kart, mini-mapą i statusem „otwarte teraz” |
+| `/polska?lat=52.23&lng=21.01&radius=5000` | „w pobliżu mnie” – od najbliższych, w promieniu 5 km |
+| `/warszawa?open=1` | tylko obiekty otwarte teraz |
+| `/warszawa?view=map` | widok mapy (duża mapa, pełny ekran, filtry na mapie); domyślnie lista |
+| `/ulubione` | ulubione obiekty zapisane w przeglądarce (localStorage) |
+
+Mapa grupuje bliskie obiekty w klastry (kółko z liczbą i pierścieniem w kolorach kategorii).
+Na stronie głównej jest porównanie kart: ile opublikowanych obiektów w danym obszarze akceptuje każdą kartę.
+Lista, mapa, ulubione i statystyki korzystają z PostgreSQL przez `src/server/places.ts`.

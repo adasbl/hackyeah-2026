@@ -155,7 +155,164 @@ const seeds: Seed[] = [
   },
 ];
 
-export const MOCK_PLACES: PlaceDetails[] = seeds.map((s, i) => {
+// ---------------------------------------------------------------------------
+// Dodatkowe, generowane obiekty – żeby mapa (klastry), „w pobliżu mnie” i porównanie kart
+// miały na czym pracować. Generator jest deterministyczny (stałe ziarno), więc dane i slugi
+// są takie same przy każdym uruchomieniu i na serwerze, i w przeglądarce.
+// ---------------------------------------------------------------------------
+
+/** Prosty deterministyczny generator liczb losowych (mulberry32). */
+function rng(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+interface CityArea {
+  slug: string;
+  count: number;
+  /** Dwucyfrowe początki kodów pocztowych miasta. */
+  postal: string[];
+  /** Prostokąt, w którym losujemy punkty (lądem, bez zatoki i rzek na środku mapy). */
+  lat: [number, number];
+  lng: [number, number];
+  districts: string[];
+}
+
+const AREAS: CityArea[] = [
+  { slug: 'warszawa', count: 40, postal: ['00', '01', '02', '03', '04'], lat: [52.17, 52.29], lng: [20.92, 21.1], districts: ['Mokotów', 'Wola', 'Praga', 'Ursynów', 'Bemowo', 'Bielany', 'Targówek', 'Wilanów', 'Ochota', 'Żoliborz', 'Białołęka', 'Wawer', 'Śródmieście', 'Gocław', 'Saska Kępa', 'Powiśle'] },
+  { slug: 'krakow', count: 25, postal: ['30', '31'], lat: [50.02, 50.09], lng: [19.88, 20.02], districts: ['Kazimierz', 'Podgórze', 'Krowodrza', 'Nowa Huta', 'Bronowice', 'Dębniki', 'Prądnik', 'Czyżyny', 'Zabłocie', 'Grzegórzki'] },
+  { slug: 'gdansk', count: 18, postal: ['80'], lat: [54.33, 54.4], lng: [18.53, 18.64], districts: ['Wrzeszcz', 'Oliwa', 'Przymorze', 'Zaspa', 'Orunia', 'Siedlce', 'Chełm', 'Morena', 'Jasień', 'Letnica'] },
+  { slug: 'wroclaw', count: 22, postal: ['50', '51', '52', '53', '54'], lat: [51.07, 51.14], lng: [16.96, 17.1], districts: ['Krzyki', 'Fabryczna', 'Psie Pole', 'Śródmieście', 'Biskupin', 'Gaj', 'Popowice', 'Kozanów', 'Ołbin', 'Grabiszyn'] },
+  { slug: 'poznan', count: 18, postal: ['60', '61'], lat: [52.37, 52.44], lng: [16.86, 16.98], districts: ['Jeżyce', 'Grunwald', 'Wilda', 'Łazarz', 'Rataje', 'Winogrady', 'Piątkowo', 'Górczyn', 'Sołacz', 'Garbary'] },
+];
+
+const NAME_PREFIX: Record<CategorySlug, string[]> = {
+  silownia: ['Siłownia', 'Power Gym', 'Iron Club', 'Gym Point'],
+  basen: ['Pływalnia', 'Basen', 'Aqua Centrum'],
+  fitness: ['Klub Fitness', 'Fit Studio', 'Studio Ruchu'],
+  joga: ['Studio Jogi', 'Joga', 'Przestrzeń Jogi'],
+  wspinaczka: ['Ścianka', 'Boulder Hall', 'Centrum Wspinaczkowe'],
+  squash: ['Squash Club', 'Korty Squash', 'Squash & Fit'],
+};
+
+const STREETS = ['Sportowa', 'Leśna', 'Ogrodowa', 'Polna', 'Kwiatowa', 'Słoneczna', 'Lipowa', 'Szkolna', 'Parkowa', 'Klonowa', 'Długa', 'Krótka'];
+
+const CATEGORY_WEIGHTS: [CategorySlug, number][] = [
+  ['silownia', 30],
+  ['fitness', 22],
+  ['basen', 14],
+  ['joga', 14],
+  ['wspinaczka', 10],
+  ['squash', 10],
+];
+
+/** Udział statusów [accepted, conditional, not_accepted] – reszta to unknown. Różne karty mają różny zasięg. */
+const CARD_ODDS: Record<CardProviderSlug, [number, number, number]> = {
+  multisport: [0.58, 0.18, 0.08],
+  'medicover-sport': [0.36, 0.14, 0.1],
+  beactive: [0.3, 0.1, 0.14],
+  'pzu-sport': [0.2, 0.08, 0.1],
+};
+
+const CONDITIONS: Record<CategorySlug, string[]> = {
+  silownia: ['Wejścia do 16:00 w dni robocze.', 'Dopłata 5 zł w weekendy.'],
+  basen: ['Wejście do 60 min, w weekendy dopłata.', 'Bez strefy saun.'],
+  fitness: ['Tylko zajęcia grupowe.', 'Maks. 1 wejście dziennie.'],
+  joga: ['Maks. 4 wejścia w miesiącu.', 'Tylko zajęcia poranne.'],
+  wspinaczka: ['Tylko bouldering.', 'Dopłata za wypożyczenie sprzętu.'],
+  squash: ['Kort poza godzinami szczytu.', 'Dopłata 15 zł do kortu.'],
+};
+
+const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
+  silownia: ['Wejście jednorazowe', 22, 40],
+  basen: ['Bilet 60 min', 18, 36],
+  fitness: ['Wejście jednorazowe', 25, 45],
+  joga: ['Zajęcia jednorazowe', 35, 60],
+  wspinaczka: ['Wejście normalne', 30, 48],
+  squash: ['Kort 60 min', 50, 95],
+};
+
+const AMENITIES: Record<CategorySlug, string[]> = {
+  silownia: ['Szatnia', 'Prysznice', 'Strefa wolnych ciężarów', 'Parking', 'Sauna'],
+  basen: ['Basen 25 m', 'Brodzik', 'Sauna', 'Jacuzzi'],
+  fitness: ['Zajęcia grupowe', 'Strefa cardio', 'Szatnia'],
+  joga: ['Maty na miejscu', 'Herbata', 'Zajęcia online'],
+  wspinaczka: ['Bouldering', 'Wypożyczalnia butów', 'Kawiarnia'],
+  squash: ['Wypożyczalnia rakiet', 'Prysznice', 'Bar'],
+};
+
+const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
+  silownia: [DEFAULT_HOURS, [['pon–niedz', '0:00–24:00']], [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
+  basen: [[['pon–niedz', '6:00–22:00']], [['pon–pt', '6:30–22:00'], ['sob–niedz', '8:00–21:00']]],
+  fitness: [DEFAULT_HOURS, [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
+  joga: [[['pon–pt', '7:00–21:00'], ['sob', '9:00–14:00'], ['niedz', 'zamknięte']], [['pon–sob', '8:00–20:00'], ['niedz', '10:00–14:00']]],
+  wspinaczka: [[['pon–pt', '10:00–23:00'], ['sob–niedz', '9:00–22:00']]],
+  squash: [[['pon–pt', '7:00–23:00'], ['sob–niedz', '8:00–22:00']], DEFAULT_HOURS],
+};
+
+function generateSeeds(): Seed[] {
+  const rand = rng(2026);
+  const pick = <T,>(arr: readonly T[]) => arr[Math.floor(rand() * arr.length)];
+  const between = (min: number, max: number) => min + rand() * (max - min);
+  const weighted = () => {
+    const total = CATEGORY_WEIGHTS.reduce((s, [, w]) => s + w, 0);
+    let r = rand() * total;
+    for (const [c, w] of CATEGORY_WEIGHTS) if ((r -= w) < 0) return c;
+    return CATEGORY_WEIGHTS[0][0];
+  };
+  const usedNames = new Set(seeds.map((s) => s.name));
+  const out: Seed[] = [];
+
+  for (const area of AREAS) {
+    for (let i = 0; i < area.count; i++) {
+      const category = weighted();
+      let name = '';
+      for (let tries = 0; tries < 20 && (!name || usedNames.has(name)); tries++) {
+        name = `${pick(NAME_PREFIX[category])} ${pick(area.districts)}`;
+      }
+      if (usedNames.has(name)) name = `${name} ${i + 2}`;
+      usedNames.add(name);
+
+      const cards = CARD_PROVIDERS_ORDER.map((provider) => {
+        const [acc, cond, not] = CARD_ODDS[provider];
+        const r = rand();
+        if (r < acc) return claim(provider, 'accepted', { source: rand() < 0.3 ? 'venue' : 'public_source' });
+        if (r < acc + cond) return claim(provider, 'conditional', { conditions: pick(CONDITIONS[category]) });
+        if (r < acc + cond + not) return claim(provider, 'not_accepted');
+        return claim(provider, 'unknown');
+      });
+
+      const [label, min, max] = PRICE_RANGE[category];
+      const amount = Math.round(between(min, max));
+      const amenities = AMENITIES[category].filter(() => rand() < 0.55);
+
+      out.push({
+        name,
+        category,
+        city: area.slug,
+        street: `ul. ${pick(STREETS)} ${1 + Math.floor(rand() * 120)}`,
+        postalCode: `${pick(area.postal)}-${String(Math.floor(rand() * 1000)).padStart(3, '0')}`,
+        lat: Math.round(between(...area.lat) * 1e4) / 1e4,
+        lng: Math.round(between(...area.lng) * 1e4) / 1e4,
+        cards,
+        prices: [price(label, amount)],
+        hours: pick(HOURS_TEMPLATES[category]),
+        amenities: amenities.length ? amenities : AMENITIES[category].slice(0, 1),
+      });
+    }
+  }
+  return out;
+}
+
+const CARD_PROVIDERS_ORDER: CardProviderSlug[] = ['multisport', 'beactive', 'medicover-sport', 'pzu-sport'];
+
+export const MOCK_PLACES: PlaceDetails[] = [...seeds, ...generateSeeds()].map((s, i) => {
   const city = CITIES.find((c) => c.slug === s.city)!;
   const slug = slugify(s.name);
   // „od” liczymy tylko z podstawowych biletów – pozycje z notatką (dopłaty, wypożyczenia) pomijamy
