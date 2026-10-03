@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { places } from "./schema";
+import { cleanText, normalizePhone, parseOpeningHours } from "./osm-publication";
 
 export const OVERPASS_ENDPOINTS = [
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
@@ -88,7 +89,7 @@ out meta center;`);
 }
 
 function text(value: string | undefined): string | null {
-  return value?.trim() || null;
+  return cleanText(value ?? null);
 }
 
 function sports(tags: Record<string, string>): string[] {
@@ -174,13 +175,13 @@ export function normalizeWarsawFitnessPlace(
     citySlug: "warszawa",
     location: { x: parsedPoint.data.lon, y: parsedPoint.data.lat },
     openingHoursRaw: text(tags.opening_hours),
-    openingHours: [],
+    openingHours: parseOpeningHours(text(tags.opening_hours)).entries,
     paymentMethods: Object.entries(tags)
       .filter(([key, value]) => key.startsWith("payment:") && value === "yes")
       .map(([key]) => key.slice("payment:".length))
       .sort(),
     website: normalizedWebsite(tags.website ?? tags["contact:website"]),
-    phone: text(tags.phone) ?? text(tags["contact:phone"]),
+    phone: normalizePhone(text(tags.phone) ?? text(tags["contact:phone"])),
     amenities: [],
     prices: [],
     isPublished: false,

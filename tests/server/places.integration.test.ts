@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { config } from 'dotenv';
+import { readFileSync } from 'node:fs';
 import { count, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../../src/db/schema';
 import { createPlacesService } from '../../src/server/places';
 import { slugify } from '../../src/lib/catalog';
+import { publicationDecisionsSchema } from '../../src/db/osm-publication-decisions';
+import { parseOsmResponse, prepareWarsawFitnessPlaces, WARSAW_BOUNDARY_ID } from '../../src/db/osm-warsaw';
 
 // Tylko SELECT: bez seeda, migracji ani zmian danych na Supabase.
 test('Supabase: publiczne wyszukiwanie, szczegóły, karty, miasta i PostGIS', {
@@ -72,4 +75,61 @@ test('Supabase: publiczne wyszukiwanie, szczegóły, karty, miasta i PostGIS', {
   } finally {
     await client.end({ timeout: 5 });
   }
+});
+
+test('Supabase: opublikowane obiekty OSM są widoczne w serwisie, szkice nie', {
+  skip: process.env.OSM_PUBLICATION_INTEGRATION_TEST !== '1' && process.env.OSM_TECHNICAL_PUBLICATION_INTEGRATION_TEST !== '1', timeout: 90_000,
+}, async () => {
+  config({ path: '.env.local', quiet: true });
+  assert.ok(process.env.DATABASE_URL, 'DATABASE_URL_MISSING');
+  const manifest = publicationDecisionsSchema.parse(JSON.parse(readFileSync('docs/osm-publication-decisions.json', 'utf8')));
+  const client = postgres(process.env.DATABASE_URL, { ssl: 'require', prepare: false, max: 1, connect_timeout: 15 });
+  const service = createPlacesService(drizzle(client, { schema }));
+  const technical = process.env.OSM_TECHNICAL_PUBLICATION_INTEGRATION_TEST === '1';
+  try {
+    const results = await service.searchPlaces({ city: 'warszawa', limit: 100 });
+    for (let offset = results.items.length; offset < results.total; offset += 100) {
+      const page = await service.searchPlaces({ city: 'warszawa', limit: 100, offset });
+      results.items.push(...page.items);
+    }
+    for (const venue of manifest.approved) {
+      const item = results.items.find((row) => row.slug === venue.slug);
+      assert.ok(item, `PUBLISHED_OSM_NOT_VISIBLE_${venue.slug}`);
+      assert.equal(item.name, venue.name);
+      assert.equal(item.category, venue.category);
+      assert.equal(item.address.street, `${venue.street} ${venue.houseNumber}`);
+      assert.equal(item.cards.length, 4);
+      assert.ok(item.cards.every((claim) => claim.status === 'unknown'));
+      assert.equal(item.priceFrom, null);
+    }
+    const conditional = await service.getPlaceBySlug('osm-node-8890564221');
+    assert.match(conditional?.openingHours[0].days ?? '', /kluczem/);
+    assert.ok(conditional?.description?.includes('klucza'));
+    if (technical) {
+      const snapshot = JSON.parse(readFileSync('.local/osm/warszawa-fitness.json', 'utf8'));
+      assert.equal(snapshot.boundaryId, WARSAW_BOUNDARY_ID);
+      const imported = prepareWarsawFitnessPlaces(parseOsmResponse(snapshot.response), snapshot.boundaryId).records;
+      for (const record of imported) {
+        const item = results.items.find((row) => row.slug === record.slug);
+        assert.ok(item, `TECHNICAL_OSM_NOT_VISIBLE_${record.slug}`);
+        assert.ok(item.cards.every((claim) => claim.status === 'unknown'));
+        assert.equal(item.priceFrom, null);
+        assert.ok(Number.isFinite(item.location.lat) && Number.isFinite(item.location.lng));
+      }
+      const incomplete = imported.find((record) => !record.addressStreet)!;
+      assert.ok(await service.getPlaceBySlug(incomplete.slug));
+      const unnamed = imported.find((record) => record.name.startsWith('Obiekt fitness bez nazwy'))!;
+      assert.ok(await service.getPlaceBySlug(unnamed.slug));
+      assert.ok(await service.getPlaceBySlug('osm-way-96107907'));
+      console.log(JSON.stringify({ technicallyPublishedOsmVisible: imported.length, cards: 'unknown', pagination: 'ok', incompleteDetails: 'ok' }));
+    } else {
+      assert.equal(await service.getPlaceBySlug('osm-way-96107907'), null);
+      assert.equal(await service.getPlaceBySlug('osm-node-10542113124'), null);
+      assert.ok(manifest.held.every((venue) => !results.items.some((item) => item.slug === venue.slug)));
+      console.log(JSON.stringify({ sourceVerifiedOsmVisible: manifest.approved.length, cards: 'unknown', heldHidden: true }));
+    }
+  } catch (error) {
+    if (error instanceof assert.AssertionError) throw error;
+    throw new Error('OSM_PUBLIC_SERVICE_READ_FAILED');
+  } finally { await client.end({ timeout: 5 }); }
 });

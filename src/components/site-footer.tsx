@@ -6,7 +6,14 @@ export function SiteFooter() {
           Serwis nie jest powiązany z operatorami kart MultiSport, BeActive, Medicover Sport ani PZU Sport. Nazwy kart
           służą wyłącznie do opisania, czy obiekt deklaruje ich akceptację. Przed wizytą potwierdź warunki w obiekcie.
         </p>
-        <p className="font-medium text-amber-700">Wersja robocza: wyświetlane obiekty to fikcyjne dane przykładowe.</p>
+        <p>
+          Dane obiektów: ©{' '}
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">
+            OpenStreetMap contributors
+          </a>{' '}
+          (ODbL). Dane mogą wymagać aktualizacji; przed wizytą sprawdź informacje na stronie obiektu.
+        </p>
+        <p className="font-medium text-amber-700">Obiekty oznaczone [DEMO] zawierają fikcyjne dane przykładowe.</p>
       </div>
     </footer>
   );

@@ -27,7 +27,7 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
           <p className="mt-1 flex items-center gap-1 truncate text-sm text-slate-500">
             <MapPin className="size-3.5 shrink-0" aria-hidden />
             <span className="truncate">
-              {place.address.street}, {place.address.city}
+              {[place.address.street, place.address.city].filter(Boolean).join(', ')}
             </span>
           </p>
         </div>
