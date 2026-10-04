@@ -124,7 +124,7 @@ Mapa grupuje bliskie obiekty w klastry (kółko z liczbą i pierścieniem w kolo
 Na stronie głównej jest porównanie kart: ile opublikowanych obiektów w danym obszarze akceptuje każdą kartę.
 Lista, mapa, ulubione i statystyki korzystają z PostgreSQL przez `src/server/places.ts`.
 
-Na stronie obiektu, w sekcji „Karty sportowe”, formularz „Uzupełnij informacje o kartach”
+Na stronie obiektu, w osobnym panelu na dole strony, formularz „Uzupełnij informacje o kartach”
 pozwala bez logowania dodać lub poprawić status wybranej karty, warunki wejścia i opcjonalny
 link HTTP(S) do źródła. Akceptacja warunkowa wymaga opisu warunków. Zapis aktualizuje
 rekord wybranej karty w `place_card_claims`, oznacza go jako `community` z niską pewnością

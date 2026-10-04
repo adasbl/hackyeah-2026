@@ -1,14 +1,15 @@
 'use client';
 
-import { ArrowDownAZ, ChevronDown, Clock, List, Loader2, LocateFixed, Map as MapIcon, Navigation, X } from 'lucide-react';
+import { Clock, List, Loader2, LocateFixed, Map as MapIcon, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import type { PlacesSort } from '@repo/types';
 import { preloadPlacesMap } from '@/components/map/places-map-lazy';
 import { ALL_CITIES_SLUG } from '@/lib/catalog';
 import { buildSearchUrl, DEFAULT_RADIUS, hasLocation, type ResultView, type SearchFilters } from '@/lib/search-params';
 import { RadiusSelect } from './radius-select';
+import { SortMenu } from './sort-menu';
 import { GEO_ERROR_LABEL, useGeolocation } from './use-geolocation';
 
 interface Props {
@@ -109,7 +110,6 @@ export function FilterChips({ city, filters, variant = 'toolbar', showClear = fa
 
 /** Sortowanie listy: po nazwie albo od najbliższych (pyta o lokalizację, jeśli jej jeszcze nie ma). */
 export function SortSelect({ city, filters }: Props) {
-  const selectId = useId();
   const { url, go, pending } = useResultsNav({ city, filters });
   const { state: geo, locate } = useGeolocation();
   const located = hasLocation(filters);
@@ -128,24 +128,7 @@ export function SortSelect({ city, filters }: Props) {
   const busy = pending || geo === 'locating';
   return (
     <div className="flex w-full shrink-0 flex-col gap-2 sm:w-48">
-      <label htmlFor={selectId} className="sr-only">Sortowanie</label>
-      <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">
-          {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : filters.sort === 'distance' ? <Navigation className="size-5" aria-hidden /> : <ArrowDownAZ className="size-5" aria-hidden />}
-        </span>
-        <select
-          id={selectId}
-          value={filters.sort}
-          onChange={(event) => sortBy(event.target.value as PlacesSort)}
-          disabled={busy}
-          aria-busy={busy}
-          className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-11 pr-8 text-sm font-medium text-ink transition hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
-        >
-          <option value="name">Nazwa A–Z</option>
-          <option value="distance">Najbliżej</option>
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-500" aria-hidden />
-      </div>
+      <SortMenu value={filters.sort} busy={busy} onChange={sortBy} />
       {busy && <span className="sr-only" role="status">{geo === 'locating' ? 'Ustalam lokalizację…' : 'Wczytywanie wyników…'}</span>}
       {GEO_ERROR_LABEL[geo] && (
         <p className="text-sm text-rose-700" role="alert">
