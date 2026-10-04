@@ -1,7 +1,7 @@
 import { MapPin, Navigation } from 'lucide-react';
 import Link from 'next/link';
 import type { PlaceSummary } from '@repo/types';
-import { CARD_PROVIDERS, categoryOf, formatPrice } from '@/lib/catalog';
+import { CARD_PROVIDERS, categoryOf } from '@/lib/catalog';
 import { formatDistance } from '@/lib/geo';
 import { CardStatusBadge } from './card-status-badge';
 import { CategoryBadge } from './category-icon';
@@ -47,14 +47,6 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
         </div>
 
         <div className="min-h-4 flex-1" />
-        {place.priceFrom && (
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-slate-100 pt-3">
-            <span className="text-sm text-slate-500">{place.priceFrom.label}</span>
-            <span className="text-sm text-slate-500">
-              od <span className="text-base font-semibold tabular-nums text-ink">{formatPrice(place.priceFrom.amount)}</span>
-            </span>
-          </div>
-        )}
       </Link>
       <FavoriteButton slug={place.slug} name={place.name} className="absolute right-3 top-3" />
     </article>

@@ -16,7 +16,6 @@ import {
   categoryOf,
   CONFIDENCE_LABEL,
   formatDate,
-  formatPrice,
   isExpired,
   providerName,
   SOURCE_TYPE_LABEL,
@@ -31,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!place) return { title: 'Nie znaleziono obiektu' };
   return {
     title: `${place.name} – ${place.address.city}`,
-    description: `${categoryOf(place.category).name}, ${place.address.street}, ${place.address.city}. Akceptacja kart sportowych, ceny i godziny otwarcia.`,
+    description: `${categoryOf(place.category).name}, ${place.address.street}, ${place.address.city}. Akceptacja kart sportowych i godziny otwarcia.`,
   };
 }
 
@@ -209,26 +208,6 @@ export default async function PlaceDetailsPage({ params }: Props) {
             </dl>
             {place.openingHours.length > 0 && (
               <p className="mt-3 text-xs text-slate-500">Regularne godziny mogą różnić się w święta. Warunki wejścia i godziny recepcji sprawdź na stronie klubu.</p>
-            )}
-          </section>
-
-          <section aria-labelledby="prices-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-            <h2 id="prices-h" className="mb-3 font-semibold">Orientacyjne ceny</h2>
-            <ul className="space-y-1.5 text-sm">
-              {place.prices.map((p) => (
-                <li key={p.label} className="flex justify-between gap-3">
-                  <span className="text-slate-600">
-                    {p.label}
-                    {p.note && <span className="text-slate-400"> ({p.note})</span>}
-                  </span>
-                  <span className="font-medium tabular-nums">{formatPrice(p.amount)}</span>
-                </li>
-              ))}
-            </ul>
-            {place.prices.length === 0 ? (
-              <p className="text-sm text-slate-500">Brak informacji o cenach. Sprawdź aktualny cennik obiektu.</p>
-            ) : (
-              <p className="mt-3 text-xs text-slate-400">Ceny mogą się zmienić. Aktualizacja: {formatDate(place.updatedAt)}.</p>
             )}
           </section>
 
