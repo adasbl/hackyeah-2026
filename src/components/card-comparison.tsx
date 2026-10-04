@@ -46,7 +46,7 @@ export function CardComparison({ datasets }: { datasets: CardStatsDataset[] }) {
           aria-controls={panelId}
           className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-white/60 sm:gap-4 sm:p-6"
         >
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-md shadow-brand-600/25">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-300 text-slate-500">
             <BarChart3 className="size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">

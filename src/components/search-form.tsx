@@ -109,7 +109,7 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
           aria-controls={formId}
           className="flex w-full items-center gap-3 rounded-2xl border border-white/70 bg-white/80 p-3 text-left shadow-[0_20px_50px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl transition hover:bg-white disabled:opacity-70"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-300 text-slate-500">
             {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <SlidersHorizontal className="size-5" aria-hidden />}
           </span>
           <span className="min-w-0 flex-1">
