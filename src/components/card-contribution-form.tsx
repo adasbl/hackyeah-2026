@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useActionState, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { PencilLine } from 'lucide-react';
 import type { CardClaim, CardProviderSlug } from '@repo/types';
 import { CARD_PROVIDERS, providerName } from '@/lib/catalog';
@@ -8,22 +8,28 @@ import { saveCardContribution } from '@/lib/data/card-contribution-actions';
 
 export function CardContributionForm({ placeSlug, cards }: { placeSlug: string; cards: CardClaim[] }) {
   const [provider, setProvider] = useState<CardProviderSlug>('multisport');
+  const [formVersion, setFormVersion] = useState(0);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const handleSuccess = useCallback(() => {
+    detailsRef.current?.removeAttribute('open');
+    setFormVersion((version) => version + 1);
+  }, []);
 
   return (
-    <details className="mt-6 rounded-xl border border-brand-100 bg-brand-50/50">
+    <details ref={detailsRef} className="mt-6 rounded-xl border border-brand-100 bg-brand-50/50">
       <summary className="flex min-h-11 cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-brand-700">
         <PencilLine className="size-4 shrink-0" aria-hidden />
         Uzupełnij informacje o kartach
       </summary>
       <div className="border-t border-brand-100 p-4">
-        <p className="mb-4 text-sm text-slate-600">Wiesz, jakie karty honoruje ten obiekt? Dodaj lub popraw informację. Zmiana będzie widoczna od razu jako zgłoszenie społeczności.</p>
-        <ContributionFields key={provider} placeSlug={placeSlug} provider={provider} onProviderChange={setProvider} claim={cards.find((card) => card.provider === provider)} />
+        <p className="mb-4 text-sm text-slate-600">Wiesz, jakie karty honoruje ten obiekt? Zgłoś nową informację lub poprawkę. Pojawi się na stronie po sprawdzeniu i zatwierdzeniu przez administratora.</p>
+        <ContributionFields key={`${provider}-${formVersion}`} placeSlug={placeSlug} provider={provider} onProviderChange={setProvider} onSuccess={handleSuccess} claim={cards.find((card) => card.provider === provider)} />
       </div>
     </details>
   );
 }
 
-function ContributionFields({ placeSlug, provider, onProviderChange, claim }: { placeSlug: string; provider: CardProviderSlug; onProviderChange: (provider: CardProviderSlug) => void; claim?: CardClaim }) {
+function ContributionFields({ placeSlug, provider, onProviderChange, onSuccess, claim }: { placeSlug: string; provider: CardProviderSlug; onProviderChange: (provider: CardProviderSlug) => void; onSuccess: () => void; claim?: CardClaim }) {
   const id = useId();
   const [state, action, pending] = useActionState(saveCardContribution, { success: false, message: '' });
   const [status, setStatus] = useState(claim?.status === 'unknown' ? '' : claim?.status ?? '');
@@ -31,10 +37,18 @@ function ContributionFields({ placeSlug, provider, onProviderChange, claim }: { 
   const [sourceUrl, setSourceUrl] = useState(claim?.sourceUrl ?? '');
   const inputClass = 'min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm';
 
+  useEffect(() => {
+    if (!state.success) return;
+    setStatus('');
+    setConditions('');
+    setSourceUrl('');
+    onSuccess();
+  }, [onSuccess, state.success]);
+
   return (
     <form action={action} className="space-y-4" aria-label={`Informacje o karcie ${providerName(provider)}`}>
       <input type="hidden" name="placeSlug" value={placeSlug} />
-      <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
+      <fieldset disabled={pending || state.success} className="space-y-4 disabled:opacity-60">
         <div>
           <label htmlFor={`${id}-provider`} className="mb-1 block text-sm font-medium">Karta sportowa</label>
           <select id={`${id}-provider`} name="provider" value={provider} onChange={(event) => onProviderChange(event.target.value as CardProviderSlug)} className={inputClass}>
@@ -61,7 +75,7 @@ function ContributionFields({ placeSlug, provider, onProviderChange, claim }: { 
           <input id={`${id}-source`} name="sourceUrl" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={2000} placeholder="https://…" className={inputClass} aria-invalid={!!state.errors?.sourceUrl} aria-describedby={state.errors?.sourceUrl ? `${id}-source-error` : undefined} />
           {state.errors?.sourceUrl && <p id={`${id}-source-error`} className="mt-1 text-sm text-rose-700">{state.errors.sourceUrl}</p>}
         </div>
-        <button type="submit" className="min-h-11 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-wait">{pending ? 'Zapisywanie…' : 'Zapisz informację'}</button>
+        <button type="submit" className="min-h-11 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-wait">{pending ? 'Wysyłanie…' : state.success ? 'Zgłoszenie wysłane' : 'Wyślij zgłoszenie'}</button>
       </fieldset>
       {state.message && <p role={state.success ? 'status' : 'alert'} className={`text-sm ${state.success ? 'text-emerald-800' : 'text-rose-700'}`}>{state.message}</p>}
     </form>
