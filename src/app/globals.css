@@ -26,6 +26,8 @@
 @layer base {
   html {
     color-scheme: light;
+    /* Skala UI jak przy zoomie 80%; rem zachowuje responsywny układ. */
+    font-size: 80%;
   }
 
   body {
@@ -47,6 +49,21 @@
   :focus-visible {
     outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
+  }
+}
+
+/* Pola i cele dotykowe pozostają wygodne na telefonach i tabletach. */
+@media (pointer: coarse) {
+  body :is(button, select, [role="option"], a[aria-pressed], nav a) {
+    min-height: 44px;
+  }
+
+  body :is(button, nav a) {
+    min-width: 44px;
+  }
+
+  body :is(input:not([type="hidden"]), select, textarea) {
+    font-size: 16px;
   }
 }
 
