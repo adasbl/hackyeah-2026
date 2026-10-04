@@ -126,8 +126,12 @@ Lista, mapa, ulubione i statystyki korzystają z PostgreSQL przez `src/server/pl
 
 Na stronie obiektu, w sekcji „Karty sportowe”, formularz „Uzupełnij informacje o kartach”
 pozwala bez logowania dodać lub poprawić status wybranej karty, warunki wejścia i opcjonalny
-link HTTP(S) do źródła. Akceptacja warunkowa wymaga opisu warunków. Zapis aktualizuje
-rekord wybranej karty w `place_card_claims`, oznacza go jako `community` z niską pewnością
-i odświeża cache szczegółów, wyszukiwania oraz statystyk. Ostatnie zgłoszenie zastępuje
-poprzednią informację o tej karcie; formularz jest dostępny tylko dla opublikowanych obiektów.
-Funkcja korzysta z istniejącego schematu bazy i nie wymaga nowej migracji.
+link HTTP(S) do źródła. Akceptacja warunkowa wymaga opisu warunków. Zapis trafia do
+`card_contributions` jako oczekujące zgłoszenie i nie zmienia danych publicznych.
+Dopiero administrator w `/admin` może zatwierdzić lub odrzucić propozycję.
+Zatwierdzenie aktualizuje `place_card_claims` i cache, a historia zachowuje decyzję,
+autora, datę oraz poprzednie wartości. Link do panelu znajduje się w stopce.
+
+Wymagana jest migracja `0002_contribution_moderation`. Logowanie korzysta z
+Supabase Auth, a uprawnienia z tabeli `admin_users`. Pełna konfiguracja i instrukcja
+utworzenia pierwszego administratora: [moderacja zgłoszeń](docs/admin-moderation.md).

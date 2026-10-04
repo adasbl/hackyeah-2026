@@ -15,6 +15,13 @@
       "when": 1791074247731,
       "tag": "0001_sports_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791097132325,
+      "tag": "0002_contribution_moderation",
+      "breakpoints": true
     }
   ]
 }

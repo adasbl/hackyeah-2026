@@ -62,7 +62,7 @@ function harness(published = true, failWrite = false) {
       const query = values(row);
       query.execute = (async () => {
         queries.push(query.toSQL());
-        if (failWrite && table === schema.placeCardClaims) throw new Error('WRITE_FAILED');
+        if (failWrite && table === schema.cardContributions) throw new Error('WRITE_FAILED');
         return [];
       }) as typeof query.execute;
       return query;
@@ -77,7 +77,7 @@ function harness(published = true, failWrite = false) {
       const query = from(table);
       query.execute = (async () => {
         queries.push(query.toSQL());
-        return [{ id: 'provider-id' }];
+        return published ? [{ id: 'place-id' }] : [];
       }) as typeof query.execute;
       return query;
     }) as typeof builder.from;
@@ -86,25 +86,20 @@ function harness(published = true, failWrite = false) {
   return { service: createCardContributionsService(database), queries, transactions: () => transactions };
 }
 
-test('zapis dodaje lub aktualizuje tylko wybraną kartę i oznacza zgłoszenie społeczności', async () => {
+test('zgłoszenie zapisuje wyłącznie propozycję, nie zmienia opublikowanych danych', async () => {
   const { service, queries, transactions } = harness();
   assert.equal(await service.save(input), true);
   assert.equal(transactions(), 1);
-  assert.equal(queries.length, 4);
+  assert.equal(queries.length, 2);
   assert.match(queries[0].sql, /"slug" = \$\d+ and "places"\."is_published" = \$\d+/);
   assert.ok(queries[0].params.includes(true));
-  assert.match(queries[1].sql, /on conflict \("slug"\) do nothing/);
-  assert.ok(queries[1].params.includes('multisport'));
-  const write = queries[3];
-  assert.match(write.sql, /on conflict \("place_id","provider_id"\) do update set/);
+  assert.match(queries[0].sql, /for share/);
+  const write = queries[1];
+  assert.match(write.sql, /^insert into "card_contributions"/);
+  assert.ok(write.params.includes('multisport'));
   assert.ok(write.params.includes('place-id'));
-  assert.ok(write.params.includes('provider-id'));
-  assert.ok(write.params.includes('community'));
-  assert.ok(write.params.includes('low'));
   assert.ok(write.params.includes('accepted'));
-  // Aktualizacja usuwa starą datę wygaśnięcia oraz cytat z poprzedniego źródła.
-  assert.match(write.sql, /"source_quote" = \$\d+/);
-  assert.match(write.sql, /"expires_at" = \$\d+/);
+  assert.ok(queries.every(({ sql }) => !/^update|place_card_claims|card_providers/.test(sql)));
 });
 
 test('brak opublikowanego obiektu kończy zapis przed zapytaniami o karty', async () => {

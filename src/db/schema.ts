@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -18,6 +19,7 @@ import {
   CARD_STATUSES,
   CATEGORY_SLUGS,
   SOURCE_TYPES,
+  type CardProviderSlug,
   type OpeningHoursEntry,
   type Price,
 } from "@repo/types";
@@ -32,6 +34,14 @@ export const cardStatusEnum = pgEnum("card_status", CARD_STATUSES);
 export const sourceTypeEnum = pgEnum("source_type", SOURCE_TYPES);
 export const confidenceEnum = pgEnum("confidence_level", CONFIDENCE_LEVELS);
 export const osmEntityTypeEnum = pgEnum("osm_entity_type", OSM_ENTITY_TYPES);
+export const contributionReviewEnum = pgEnum("contribution_review_status", ["pending", "approved", "rejected"]);
+
+// Identyfikatory kont zweryfikowanych przez Supabase Auth. Brak publicznych polityk RLS.
+export const adminUsers = pgTable("admin_users", {
+  userId: uuid("user_id").primaryKey(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}).enableRLS();
 
 /**
  * Kanoniczny rekord obiektu używany przez wyszukiwarkę.
@@ -181,6 +191,29 @@ export const placeCardClaims = pgTable(
     ),
   ],
 ).enableRLS();
+
+export const cardContributions = pgTable("card_contributions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  placeId: uuid("place_id").notNull().references(() => places.id, { onDelete: "restrict" }),
+  provider: text("provider").$type<CardProviderSlug>().notNull(),
+  status: cardStatusEnum("status").notNull(),
+  conditions: text("conditions"),
+  sourceUrl: text("source_url"),
+  reviewStatus: contributionReviewEnum("review_status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewedBy: uuid("reviewed_by").references(() => adminUsers.userId, { onDelete: "restrict" }),
+  reviewNote: text("review_note"),
+  previousClaim: jsonb("previous_claim").$type<{
+    status: typeof CARD_STATUSES[number]; conditions: string | null; sourceUrl: string | null;
+  }>(),
+}, (table) => [
+  index("card_contributions_review_created_idx").on(table.reviewStatus, table.createdAt),
+  index("card_contributions_place_idx").on(table.placeId),
+  check("card_contributions_provider_check", sql`${table.provider} in ('multisport', 'beactive', 'medicover-sport', 'pzu-sport')`),
+  check("card_contributions_status_check", sql`${table.status} <> 'unknown'`),
+  check("card_contributions_review_check", sql`(${table.reviewStatus} = 'pending' and ${table.reviewedAt} is null and ${table.reviewedBy} is null) or (${table.reviewStatus} <> 'pending' and ${table.reviewedAt} is not null and ${table.reviewedBy} is not null)`),
+]).enableRLS();
 
 export const placesRelations = relations(places, ({ many }) => ({
   cardClaims: many(placeCardClaims),

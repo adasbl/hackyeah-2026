@@ -1,8 +1,6 @@
 'use server';
 
-import { revalidateTag } from 'next/cache';
 import { cardContributionSchema, type CardContributionState } from '@/lib/card-contribution';
-import { PLACES_CACHE_TAG } from '@/lib/data/places';
 import { createCardContributionsService } from '@/server/card-contributions';
 
 export async function saveCardContribution(
@@ -33,6 +31,5 @@ export async function saveCardContribution(
     return { success: false, message: 'Nie udało się zapisać informacji. Spróbuj ponownie za chwilę.' };
   }
 
-  revalidateTag(PLACES_CACHE_TAG);
-  return { success: true, message: 'Dziękujemy! Informacja o karcie została zapisana jako zgłoszenie społeczności.' };
+  return { success: true, message: 'Dziękujemy! Zgłoszenie czeka na sprawdzenie. Informacja na stronie zmieni się po zatwierdzeniu.' };
 }
