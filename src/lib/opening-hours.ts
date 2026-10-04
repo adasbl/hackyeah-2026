@@ -111,6 +111,8 @@ export type OpenStatus =
  * null, gdy godzin nie da się odczytać – wtedy niczego nie obiecujemy.
  */
 export function getOpenStatus(entries: OpeningHoursEntry[], now = new Date()): OpenStatus {
+  // Brak godzin oznacza brak danych, a nie zamknięcie obiektu.
+  if (entries.length === 0) return null;
   const intervals = weeklyIntervals(entries);
   if (!intervals || intervals.length === 0) return intervals ? { open: false, label: 'Zamknięte' } : null;
   const t = warsawWeekMinute(now);
