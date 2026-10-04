@@ -1,0 +1,796 @@
+diff --git a/package.json b/package.json
+index 7896dad..00057cf 100644
+--- a/package.json
++++ b/package.json
+@@ -3,7 +3,7 @@
+   "version": "0.1.0",
+   "private": true,
+   "scripts": {
+-    "dev": "next dev",
++    "dev": "next dev --turbopack",
+     "prebuild": "node scripts/copy-maplibre-worker.mjs",
+     "build": "next build",
+     "start": "next start",
+diff --git a/packages/types/index.ts b/packages/types/index.ts
+index 812f4a5..9eaa93d 100644
+--- a/packages/types/index.ts
++++ b/packages/types/index.ts
+@@ -7,7 +7,7 @@
+ export const CARD_PROVIDER_SLUGS = ['multisport', 'beactive', 'medicover-sport', 'pzu-sport'] as const;
+ export type CardProviderSlug = (typeof CARD_PROVIDER_SLUGS)[number];
+ 
+-export const CATEGORY_SLUGS = ['silownia', 'basen', 'fitness', 'joga', 'wspinaczka', 'squash'] as const;
++export const CATEGORY_SLUGS = ['silownia', 'basen', 'fitness', 'joga', 'wspinaczka', 'squash', 'tenis', 'taniec'] as const;
+ export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
+ 
+ /** Status karty – nigdy boolean. */
+diff --git a/src/app/[city]/page.tsx b/src/app/[city]/page.tsx
+index 2cd0697..b0a74e8 100644
+--- a/src/app/[city]/page.tsx
++++ b/src/app/[city]/page.tsx
+@@ -188,7 +188,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
+           <>
+             <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+               {items.map((p, i) => (
+-                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
++                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 5) * 25}ms` }}>
+                   <PlaceCard place={p} />
+                 </li>
+               ))}
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 741e841..53630bd 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -2,7 +2,6 @@
+ 
+ @theme {
+   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+   --color-brand-50: #eef4ff;
+   --color-brand-100: #dbe7ff;
+   --color-brand-500: #3b6cff;
+@@ -10,22 +9,18 @@
+   --color-brand-700: #1d43c4;
+   --color-ink: #0b1220;
+ 
+-  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
++  /* Krótko: treść ma być widoczna od razu, animacja tylko ją „podaje”. */
++  --animate-fade-up: fade-up 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+   --animate-pop: pop 0.18s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+-  --animate-drift: drift 18s ease-in-out infinite alternate;
+ 
+   @keyframes fade-up {
+-    from { opacity: 0; transform: translateY(14px); }
++    from { opacity: 0; transform: translateY(8px); }
+     to { opacity: 1; transform: none; }
+   }
+   @keyframes pop {
+     from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+     to { opacity: 1; transform: none; }
+   }
+-  @keyframes drift {
+-    from { transform: translate3d(0, 0, 0) scale(1); }
+-    to { transform: translate3d(40px, 30px, 0) scale(1.15); }
+-  }
+ }
+ 
+ @layer base {
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 09eae0d..4855f64 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,6 +1,5 @@
+ import type { Metadata } from 'next';
+ import { GeistSans } from 'geist/font/sans';
+-import { GeistMono } from 'geist/font/mono';
+ import { SiteHeader } from '@/components/site-header';
+ import { NavigationTracker } from '@/components/navigation/navigation-tracker';
+ import { SiteFooter } from '@/components/site-footer';
+@@ -14,7 +13,7 @@ export const metadata: Metadata = {
+ 
+ export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+   return (
+-    <html lang="pl" className={`${GeistSans.variable} ${GeistMono.variable}`}>
++    <html lang="pl" className={GeistSans.variable}>
+       <body className="flex min-h-dvh flex-col font-sans">
+         <NavigationTracker />
+         <SiteHeader />
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 5ed951b..44f0f0e 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -2,13 +2,14 @@ import { Backdrop } from '@/components/backdrop';
+ import { CardComparison } from '@/components/card-comparison';
+ import { SearchForm } from '@/components/search-form';
+ import { cityLocative } from '@/lib/catalog';
+-import { getCardStats, getCityOptions } from '@/lib/data/places';
++import { getCardStatsByCity, getCityOptions } from '@/lib/data/places';
+ 
+ export default async function HomePage() {
+-  const cityOptions = await getCityOptions();
+-  const areas = cityOptions.map(({ slug, name }) => ({ slug, label: name }));
+-  const stats = await Promise.all(areas.map((a) => getCardStats({ city: a.slug })));
+-  const datasets = areas.map((a, i) => ({ ...a, where: cityLocative(a.slug, a.label), stats: stats[i] })).filter((d) => d.stats.total > 0);
++  // Miasta i statystyki kart wszystkich miast – równolegle, po dwa krótkie zapytania agregujące.
++  const [cityOptions, statsByCity] = await Promise.all([getCityOptions(), getCardStatsByCity()]);
++  const datasets = cityOptions
++    .map(({ slug, name }) => ({ slug, label: name, where: cityLocative(slug, name), stats: statsByCity[slug] }))
++    .filter((d) => d.stats && d.stats.total > 0);
+ 
+   return (
+     <section className="relative isolate flex flex-1 flex-col">
+@@ -18,10 +19,10 @@ export default async function HomePage() {
+           Znajdź obiekt{' '}
+           <span className="bg-gradient-to-r from-brand-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">dla swojej karty</span>
+         </h1>
+-        <div className="relative z-20 mt-10 animate-fade-up [animation-delay:120ms]">
++        <div className="relative z-20 mt-10 animate-fade-up [animation-delay:40ms]">
+           <SearchForm cityOptions={cityOptions} />
+         </div>
+-        <div className="mt-6 animate-fade-up [animation-delay:240ms]">
++        <div className="mt-6 animate-fade-up [animation-delay:80ms]">
+           <CardComparison datasets={datasets} />
+         </div>
+       </div>
+diff --git a/src/app/places/[slug]/loading.tsx b/src/app/places/[slug]/loading.tsx
+new file mode 100644
+index 0000000..dc40bce
+--- /dev/null
++++ b/src/app/places/[slug]/loading.tsx
+@@ -0,0 +1,23 @@
++/** Szkielet strony obiektu – pokazuje się od razu po kliknięciu, zanim serwer odda dane. */
++export default function Loading() {
++  return (
++    <div className="mx-auto max-w-5xl px-4 py-8" aria-busy="true" aria-label="Wczytywanie obiektu">
++      <div className="mb-5 h-9 w-44 animate-pulse rounded-full bg-white/80 ring-1 ring-slate-200" />
++      <div className="flex items-start gap-4">
++        <div className="size-16 shrink-0 animate-pulse rounded-2xl bg-slate-200/80" />
++        <div className="flex-1 space-y-2">
++          <div className="h-3 w-24 animate-pulse rounded bg-slate-200/70" />
++          <div className="h-8 w-2/3 max-w-md animate-pulse rounded-lg bg-slate-200/70" />
++          <div className="h-4 w-1/2 max-w-sm animate-pulse rounded bg-slate-200/60" />
++        </div>
++      </div>
++      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
++        <div className="h-96 animate-pulse rounded-3xl bg-white/80 ring-1 ring-slate-200" />
++        <div className="space-y-6">
++          <div className="h-80 animate-pulse rounded-3xl bg-white/80 ring-1 ring-slate-200" />
++          <div className="h-40 animate-pulse rounded-3xl bg-white/80 ring-1 ring-slate-200" />
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/backdrop.tsx b/src/components/backdrop.tsx
+index 04fe799..57ab379 100644
+--- a/src/components/backdrop.tsx
++++ b/src/components/backdrop.tsx
+@@ -1,10 +1,15 @@
+-/** Dekoracyjne, rozmyte tło z delikatnie poruszającymi się plamami światła */
++/**
++ * Dekoracyjne tło z miękkimi plamami światła.
++ * Plamy to radial-gradient zamiast `filter: blur()` i nie są animowane: przeglądarka rysuje je raz.
++ * Rozmyte, ruchome plamy pod szklanymi panelami (backdrop-blur w nagłówku, formularzu, kartach)
++ * zmuszały ją do przeliczania rozmycia w każdej klatce – to obciążało GPU i przycinało przewijanie.
++ */
+ export function Backdrop() {
+   return (
+     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+-      <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-[85%] rounded-full bg-brand-500/25 blur-[110px] animate-drift" />
+-      <div className="absolute -top-24 left-1/2 h-[460px] w-[460px] translate-x-[5%] rounded-full bg-violet-500/20 blur-[110px] animate-drift [animation-delay:-6s]" />
+-      <div className="absolute top-40 left-1/2 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-cyan-400/15 blur-[90px] animate-drift [animation-delay:-12s]" />
++      <div className="absolute left-[calc(50%-552px)] top-[-270px] size-[740px] bg-[radial-gradient(closest-side,var(--color-brand-500)_30%,transparent)] opacity-20" />
++      <div className="absolute left-[calc(50%-87px)] top-[-206px] size-[680px] bg-[radial-gradient(closest-side,var(--color-violet-500)_30%,transparent)] opacity-[0.17]" />
++      <div className="absolute left-[calc(50%-240px)] top-[70px] size-[480px] bg-[radial-gradient(closest-side,var(--color-cyan-400)_30%,transparent)] opacity-[0.12]" />
+       <div className="absolute inset-0 bg-[radial-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]" />
+     </div>
+   );
+diff --git a/src/components/category-icon.tsx b/src/components/category-icon.tsx
+index 2d667ea..50457ca 100644
+--- a/src/components/category-icon.tsx
++++ b/src/components/category-icon.tsx
+@@ -1,4 +1,4 @@
+-import { Dumbbell, Flower2, HeartPulse, LayoutGrid, Mountain, Target, Waves, type LucideIcon } from 'lucide-react';
++import { CircleDot, Dumbbell, Flower2, HeartPulse, LayoutGrid, Mountain, Music, Target, Waves, type LucideIcon } from 'lucide-react';
+ import type { CategorySlug } from '@repo/types';
+ import { categoryOf } from '@/lib/catalog';
+ 
+@@ -9,11 +9,13 @@ const ICONS: Record<CategorySlug, LucideIcon> = {
+   joga: Flower2,
+   wspinaczka: Mountain,
+   squash: Target,
++  tenis: CircleDot,
++  taniec: Music,
+ };
+ 
+ /** Sama ikona kategorii (albo „wszystkie”, gdy brak kategorii) */
+ export function CategoryGlyph({ category, className = 'size-4' }: { category?: CategorySlug; className?: string }) {
+-  const Icon = category ? ICONS[category] : LayoutGrid;
++  const Icon = (category && ICONS[category]) || LayoutGrid;
+   return <Icon className={className} strokeWidth={2} aria-hidden />;
+ }
+ 
+diff --git a/src/components/map/markers.ts b/src/components/map/markers.ts
+index 85a4390..0946726 100644
+--- a/src/components/map/markers.ts
++++ b/src/components/map/markers.ts
+@@ -3,7 +3,7 @@
+  * Elementy DOM tworzymy ręcznie, bo MapLibre nie renderuje Reacta.
+  * Plik importujemy tylko z komponentów ładowanych po stronie klienta (ssr: false).
+  */
+-import { createElement as createIcon, Dumbbell, Flower2, HeartPulse, Mountain, Target, Waves, type IconNode } from 'lucide';
++import { createElement as createIcon, CircleDot, Dumbbell, Flower2, HeartPulse, Mountain, Music, Target, Waves, type IconNode } from 'lucide';
+ import * as maplibregl from 'maplibre-gl';
+ import { CATEGORY_SLUGS, type CategorySlug } from '@repo/types';
+ import { categoryOf } from '@/lib/catalog';
+@@ -21,6 +21,8 @@ export const MARKER_COLORS: Record<CategorySlug, string> = {
+   joga: '#10b981',
+   wspinaczka: '#f59e0b',
+   squash: '#6366f1',
++  tenis: '#84cc16',
++  taniec: '#9333ea',
+ };
+ 
+ /** Ikony w pinezkach – te same co w category-icon.tsx, ale z paczki `lucide` (czysty DOM, bez Reacta). */
+@@ -31,6 +33,8 @@ const MARKER_ICONS: Record<CategorySlug, IconNode> = {
+   joga: Flower2,
+   wspinaczka: Mountain,
+   squash: Target,
++  tenis: CircleDot,
++  taniec: Music,
+ };
+ 
+ /** Dymek nad pinezką: czubek pinezki jest w punkcie, a jej „główka” ~22 px wyżej. */
+@@ -70,12 +74,12 @@ export function createPin(place: { name: string; category: CategorySlug }, opts:
+   shape.setAttribute('aria-hidden', 'true');
+   const path = document.createElementNS(NS, 'path');
+   path.setAttribute('d', 'M14 35C14 35 27 23 27 13.5A13 13 0 0 0 1 13.5C1 23 14 35 14 35Z');
+-  path.setAttribute('fill', MARKER_COLORS[place.category]);
++  path.setAttribute('fill', MARKER_COLORS[place.category] ?? '#64748b');
+   path.setAttribute('stroke', 'white');
+   path.setAttribute('stroke-width', '2');
+   shape.append(path);
+ 
+-  const icon = createIcon(MARKER_ICONS[place.category], {
++  const icon = createIcon(MARKER_ICONS[place.category] ?? Target, {
+     class: `absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-white ${
+       opts.size === 'lg' ? 'top-[18px] size-[18px]' : 'top-[13.5px] size-3.5'
+     }`,
+diff --git a/src/components/map/places-map-lazy.tsx b/src/components/map/places-map-lazy.tsx
+index a982b05..30cc5ed 100644
+--- a/src/components/map/places-map-lazy.tsx
++++ b/src/components/map/places-map-lazy.tsx
+@@ -6,10 +6,10 @@
+  */
+ import dynamic from 'next/dynamic';
+ 
+-/** Wcześniejsze pobranie tego samego modułu, którego używa dynamic poniżej. */
++/** Wcześniejsze pobranie tego samego modułu, którego używa dynamic poniżej, i rozgrzanie workerów MapLibre. */
+ export function preloadPlacesMap() {
+   // Nieudane pobranie w tle nie blokuje listy; dynamic ponowi import przy wejściu na mapę.
+-  void import('./places-map').catch(() => {});
++  void import('./places-map').then((m) => m.warmUpMap()).catch(() => {});
+ }
+ 
+ export const PlacesMapLazy = dynamic(() => import('./places-map').then((m) => m.PlacesMap), {
+diff --git a/src/components/map/places-map.tsx b/src/components/map/places-map.tsx
+index 74083d6..6c038db 100644
+--- a/src/components/map/places-map.tsx
++++ b/src/components/map/places-map.tsx
+@@ -79,6 +79,15 @@ function toGeoJson(places: MapPlace[]): GeoJSON.FeatureCollection<GeoJSON.Point,
+ 
+ export const MAP_HEIGHT = 'h-[68dvh] min-h-[420px] sm:h-[72dvh] sm:max-h-[820px]';
+ 
++/**
++ * Uruchamia z wyprzedzeniem workery MapLibre (wspólne dla wszystkich map na stronie).
++ * Wołane razem z wcześniejszym pobraniem kodu mapy – po przełączeniu na mapę kafelki ładują się od razu,
++ * a workery przeżywają też ponowne utworzenie mapy po zmianie filtrów.
++ */
++export function warmUpMap() {
++  maplibregl.prewarm();
++}
++
+ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heightClassName = MAP_HEIGHT }: Props) {
+   const router = useRouter();
+   const wrapperRef = useRef<HTMLDivElement>(null);
+@@ -106,6 +115,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
+   // 1) Utworzenie mapy – raz, po zamontowaniu.
+   useEffect(() => {
+     if (!containerRef.current) return;
++    warmUpMap(); // workery zostają po zmianie filtrów (nowa mapa), zamiast startować od zera
+     let timer: ReturnType<typeof setTimeout> | undefined;
+     let disposed = false;
+ 
+@@ -272,10 +282,20 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
+         });
+       }
+     });
++    // Podczas przesuwania „move” przychodzi wiele razy na klatkę – synchronizujemy najwyżej raz na klatkę.
++    let syncFrame = 0;
++    const scheduleSync = () => {
++      if (!syncFrame) {
++        syncFrame = requestAnimationFrame(() => {
++          syncFrame = 0;
++          syncMarkers();
++        });
++      }
++    };
+     map.on('sourcedata', (e) => {
+-      if (e.sourceId === SOURCE && e.isSourceLoaded) syncMarkers();
++      if (e.sourceId === SOURCE && e.isSourceLoaded) scheduleSync();
+     });
+-    map.on('move', syncMarkers);
++    map.on('move', scheduleSync);
+     map.on('moveend', syncMarkers);
+ 
+     async function loadVisible() {
+@@ -303,6 +323,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
+     return () => {
+       disposed = true;
+       clearTimeout(timer);
++      cancelAnimationFrame(syncFrame);
+       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+       userMarker?.remove();
+       pinMarkers.forEach((m) => m.remove());
+diff --git a/src/components/site-header.tsx b/src/components/site-header.tsx
+index bb57612..784d129 100644
+--- a/src/components/site-header.tsx
++++ b/src/components/site-header.tsx
+@@ -6,7 +6,7 @@ export function SiteHeader() {
+     <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
+       <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-center px-4">
+         <Link
+-           href="https://fit-pass-finder.vercel.app/"
++          href="/"
+           aria-label="Fit Pass Finder, strona główna"
+           className="bg-gradient-to-r from-brand-600 via-violet-600 to-fuchsia-500 bg-clip-text text-xl font-bold tracking-tight text-transparent transition hover:opacity-80"
+         >
+diff --git a/src/db/client.ts b/src/db/client.ts
+index 08be304..bf1d562 100644
+--- a/src/db/client.ts
++++ b/src/db/client.ts
+@@ -8,6 +8,15 @@ if (!databaseUrl) {
+   throw new Error("Brak DATABASE_URL w .env.local");
+ }
+ 
++/** Lokalny Postgres z docker-compose nie ma SSL; baza w chmurze (Supabase) go wymaga. */
++function isLocalDatabase(url: string) {
++  try {
++    return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname);
++  } catch {
++    return false;
++  }
++}
++
+ // Zachowujemy klienta podczas przeładowań aplikacji w trybie dev.
+ const globalForDb = globalThis as unknown as {
+   postgresClient?: ReturnType<typeof postgres>;
+@@ -16,9 +25,14 @@ const globalForDb = globalThis as unknown as {
+ const client =
+   globalForDb.postgresClient ??
+   postgres(databaseUrl, {
+-    ssl: "require",
++    ssl: isLocalDatabase(databaseUrl) ? false : "require",
++    // Transaction pooler (Supavisor) nie obsługuje nazwanych prepared statements.
+     prepare: false,
+-    max: 1,
++    // Bez prepared statements każde zapytanie z parametrami to dwie wymiany z bazą i blokuje połączenie.
++    // Przy max: 1 wszystkie zapytania wszystkich równoległych żądań instancji czekały w jednej kolejce
++    // (strona główna wysyłała ich kilkadziesiąt), więc strony potrafiły wisieć dziesiątki sekund.
++    // Kilka połączeń pozwala wykonywać niezależne zapytania równolegle.
++    max: 5,
+     connect_timeout: 15,
+     idle_timeout: 20,
+   });
+@@ -27,4 +41,4 @@ if (process.env.NODE_ENV !== "production") {
+   globalForDb.postgresClient = client;
+ }
+ 
+-export const db = drizzle(client, { schema });
+\ No newline at end of file
++export const db = drizzle(client, { schema });
+diff --git a/src/lib/catalog.ts b/src/lib/catalog.ts
+index bd54411..5195288 100644
+--- a/src/lib/catalog.ts
++++ b/src/lib/catalog.ts
+@@ -23,6 +23,8 @@ export const CATEGORIES: (Category & { gradient: string; soft: string })[] = [
+   { slug: 'joga', name: 'Joga', gradient: 'from-emerald-500 to-teal-400', soft: 'bg-emerald-50 text-emerald-600' },
+   { slug: 'wspinaczka', name: 'Ścianka wspinaczkowa', gradient: 'from-amber-500 to-yellow-400', soft: 'bg-amber-50 text-amber-600' },
+   { slug: 'squash', name: 'Squash', gradient: 'from-indigo-500 to-violet-400', soft: 'bg-indigo-50 text-indigo-600' },
++  { slug: 'tenis', name: 'Tenis', gradient: 'from-lime-500 to-green-400', soft: 'bg-lime-50 text-lime-700' },
++  { slug: 'taniec', name: 'Taniec', gradient: 'from-purple-600 to-pink-400', soft: 'bg-purple-50 text-purple-600' },
+ ];
+ 
+ export const CITIES = [
+@@ -82,7 +84,9 @@ export const CONFIDENCE_LABEL: Record<Confidence, string> = {
+ };
+ 
+ export const providerName = (slug: CardProviderSlug) => CARD_PROVIDERS.find((p) => p.slug === slug)?.name ?? slug;
+-export const categoryOf = (slug: CategorySlug) => CATEGORIES.find((c) => c.slug === slug)!;
++/** Nieznana kategoria (np. dodana w bazie przed zmianą kodu) dostaje neutralny wygląd zamiast wywracać stronę. */
++const UNKNOWN_CATEGORY = { slug: 'inne', name: 'Inne', gradient: 'from-slate-500 to-slate-400', soft: 'bg-slate-100 text-slate-600' };
++export const categoryOf = (slug: CategorySlug) => CATEGORIES.find((c) => c.slug === slug) ?? UNKNOWN_CATEGORY;
+ 
+ const PL_CHARS: Record<string, string> = { ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n', ó: 'o', ś: 's', ź: 'z', ż: 'z' };
+ 
+diff --git a/src/lib/data/places.ts b/src/lib/data/places.ts
+index 920b6e2..5ccd2e0 100644
+--- a/src/lib/data/places.ts
++++ b/src/lib/data/places.ts
+@@ -1,5 +1,6 @@
+ /** Warstwa dostępu do danych dla frontendu, korzystająca z bazy. */
+ import 'server-only';
++import { unstable_cache } from 'next/cache';
+ import { connection } from 'next/server';
+ import { cache } from 'react';
+ import type { PlacesQuery } from '@repo/types';
+@@ -7,11 +8,21 @@ import { createPlacesService } from '@/server/places';
+ 
+ export type { CityOption } from '@/server/places';
+ 
++type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
++type MapQuery = Filterable & { limit?: number };
++
++/**
++ * Wyniki trzymamy w Data Cache Next.js przez minutę: dane zmieniają się tylko przy imporcie,
++ * a strona nie musi za każdym razem czekać na bazę. Po tym czasie pierwsze żądanie dostaje jeszcze
++ * zapamiętany wynik, a świeży pobiera się w tle (stale-while-revalidate).
++ * Aby od razu pokazać nowy import, wystarczy revalidateTag(PLACES_CACHE_TAG) albo nowy deployment.
++ */
++const REVALIDATE_SECONDS = 60;
++export const PLACES_CACHE_TAG = 'places';
++
+ let service: ReturnType<typeof createPlacesService> | undefined;
+ 
+ async function getService() {
+-  // Baza jest potrzebna dopiero przy żądaniu, nie podczas buildu na Vercel.
+-  await connection();
+   if (!service) {
+     const { db } = await import('@/db/client');
+     service = createPlacesService(db);
+@@ -19,31 +30,51 @@ async function getService() {
+   return service;
+ }
+ 
+-// Odczyt przy każdym żądaniu, także na stronie głównej po nowym imporcie.
+-export async function searchPlaces(query: PlacesQuery) {
+-  return (await getService()).searchPlaces(query);
++/** Zapamiętana wersja funkcji serwisu; argumenty są częścią klucza cache. */
++function cached<A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>) {
++  return unstable_cache(fn, ['places-v1', name], { revalidate: REVALIDATE_SECONDS, tags: [PLACES_CACHE_TAG] });
+ }
+ 
+-export async function getPlaceBySlug(slug: string) {
+-  return (await getService()).getPlaceBySlug(slug);
++const searchPlacesCached = cached('search', async (query: PlacesQuery) => (await getService()).searchPlaces(query));
++const searchMapPointsCached = cached('map', async (query: MapQuery) => (await getService()).searchMapPoints(query));
++const placeBySlugCached = cached('place', async (slug: string) => (await getService()).getPlaceBySlug(slug));
++const cityOptionsCached = cached('cities', async () => (await getService()).getCityOptions());
++const cardStatsByCityCached = cached('card-stats', async () => (await getService()).getCardStatsByCity());
++
++// connection(): strony renderują się przy żądaniu, a baza nie jest potrzebna podczas buildu na Vercel.
++// Musi być wywołane poza unstable_cache.
++
++export async function searchPlaces(query: PlacesQuery) {
++  await connection();
++  return searchPlacesCached(query);
+ }
+ 
+ // Metadane i strona korzystają z tego samego odczytu w obrębie jednego renderowania.
+-export const getCityOptions = cache(async () => {
+-  return (await getService()).getCityOptions();
++export const getPlaceBySlug = cache(async (slug: string) => {
++  await connection();
++  return placeBySlugCached(slug);
+ });
+ 
+-type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
++export const getCityOptions = cache(async () => {
++  await connection();
++  return cityOptionsCached();
++});
+ 
+-export async function searchMapPoints(query: Filterable & { limit?: number }) {
+-  return (await getService()).searchMapPoints(query);
++export async function searchMapPoints(query: MapQuery) {
++  await connection();
++  // Prostokąt widoku mapy jest za każdym razem inny – takich zapytań nie zapamiętujemy.
++  if (query.bbox) return (await getService()).searchMapPoints(query);
++  return searchMapPointsCached(query);
+ }
+ 
+ export async function getPlacesBySlugs(slugs: string[]) {
+   if (!slugs.length) return [];
++  await connection();
+   return (await getService()).getPlacesBySlugs(slugs);
+ }
+ 
+-export async function getCardStats(query: Omit<Filterable, 'cards'>) {
+-  return (await getService()).getCardStats(query);
++/** Statystyki kart dla „całej Polski” i każdego miasta – jednym odczytem dla strony głównej. */
++export async function getCardStatsByCity() {
++  await connection();
++  return cardStatsByCityCached();
+ }
+diff --git a/src/mocks/places.ts b/src/mocks/places.ts
+index b4e1844..d860fc9 100644
+--- a/src/mocks/places.ts
++++ b/src/mocks/places.ts
+@@ -199,6 +199,8 @@ const NAME_PREFIX: Record<CategorySlug, string[]> = {
+   joga: ['Studio Jogi', 'Joga', 'Przestrzeń Jogi'],
+   wspinaczka: ['Ścianka', 'Boulder Hall', 'Centrum Wspinaczkowe'],
+   squash: ['Squash Club', 'Korty Squash', 'Squash & Fit'],
++  tenis: ['Kort Tenisowy', 'Tenis Club', 'Akademia Tenisa'],
++  taniec: ['Studio Tańca', 'Szkoła Tańca', 'Dance Point'],
+ };
+ 
+ const STREETS = ['Sportowa', 'Leśna', 'Ogrodowa', 'Polna', 'Kwiatowa', 'Słoneczna', 'Lipowa', 'Szkolna', 'Parkowa', 'Klonowa', 'Długa', 'Krótka'];
+@@ -227,6 +229,8 @@ const CONDITIONS: Record<CategorySlug, string[]> = {
+   joga: ['Maks. 4 wejścia w miesiącu.', 'Tylko zajęcia poranne.'],
+   wspinaczka: ['Tylko bouldering.', 'Dopłata za wypożyczenie sprzętu.'],
+   squash: ['Kort poza godzinami szczytu.', 'Dopłata 15 zł do kortu.'],
++  tenis: ['Kort poza godzinami szczytu.', 'Dopłata za oświetlenie kortu.'],
++  taniec: ['Tylko zajęcia grupowe.', 'Maks. 4 wejścia w miesiącu.'],
+ };
+ 
+ const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
+@@ -236,6 +240,8 @@ const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
+   joga: ['Zajęcia jednorazowe', 35, 60],
+   wspinaczka: ['Wejście normalne', 30, 48],
+   squash: ['Kort 60 min', 50, 95],
++  tenis: ['Kort 60 min', 40, 90],
++  taniec: ['Zajęcia jednorazowe', 30, 55],
+ };
+ 
+ const AMENITIES: Record<CategorySlug, string[]> = {
+@@ -245,6 +251,8 @@ const AMENITIES: Record<CategorySlug, string[]> = {
+   joga: ['Maty na miejscu', 'Herbata', 'Zajęcia online'],
+   wspinaczka: ['Bouldering', 'Wypożyczalnia butów', 'Kawiarnia'],
+   squash: ['Wypożyczalnia rakiet', 'Prysznice', 'Bar'],
++  tenis: ['Wypożyczalnia rakiet', 'Szatnia', 'Oświetlenie kortów'],
++  taniec: ['Lustra', 'Szatnia', 'Zajęcia próbne'],
+ };
+ 
+ const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
+@@ -254,6 +262,8 @@ const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
+   joga: [[['pon–pt', '7:00–21:00'], ['sob', '9:00–14:00'], ['niedz', 'zamknięte']], [['pon–sob', '8:00–20:00'], ['niedz', '10:00–14:00']]],
+   wspinaczka: [[['pon–pt', '10:00–23:00'], ['sob–niedz', '9:00–22:00']]],
+   squash: [[['pon–pt', '7:00–23:00'], ['sob–niedz', '8:00–22:00']], DEFAULT_HOURS],
++  tenis: [[['pon–pt', '8:00–22:00'], ['sob–niedz', '8:00–20:00']]],
++  taniec: [[['pon–pt', '16:00–22:00'], ['sob', '10:00–16:00'], ['niedz', 'zamknięte']]],
+ };
+ 
+ function generateSeeds(): Seed[] {
+diff --git a/src/server/place-mapper.ts b/src/server/place-mapper.ts
+index 69b3578..a751fdd 100644
+--- a/src/server/place-mapper.ts
++++ b/src/server/place-mapper.ts
+@@ -1,7 +1,11 @@
+ import { CARD_PROVIDER_SLUGS, type CardClaim, type PlaceDetails } from '@repo/types';
+ import type { cardProviders, placeCardClaims, places } from '@/db/schema';
+ 
+-type PlaceRow = typeof places.$inferSelect;
++/** Kolumny potrzebne do szczegółów obiektu – bez surowych danych OSM (tagi, historia edycji). */
++export type PlaceRow = Pick<typeof places.$inferSelect,
++  | 'id' | 'slug' | 'name' | 'category' | 'description' | 'addressStreet' | 'addressHouseNumber'
++  | 'postalCode' | 'city' | 'citySlug' | 'location' | 'openingHours' | 'website' | 'phone'
++  | 'amenities' | 'prices' | 'createdAt' | 'updatedAt'>;
+ export type ClaimRow = typeof placeCardClaims.$inferSelect & {
+   providerSlug: typeof cardProviders.$inferSelect.slug;
+ };
+diff --git a/src/server/places.ts b/src/server/places.ts
+index 9cb2dd2..4f80621 100644
+--- a/src/server/places.ts
++++ b/src/server/places.ts
+@@ -5,12 +5,33 @@ import * as schema from '@/db/schema';
+ import { ALL_CITIES_LABEL, ALL_CITIES_SLUG, slugify } from '@/lib/catalog';
+ import { distanceMeters, MAP_LIMIT, type MapPlacesResult } from '@/lib/geo';
+ import { isOpenNow } from '@/lib/opening-hours';
+-import { toPlaceDetails, type ClaimRow } from './place-mapper';
++import { toPlaceDetails, type ClaimRow, type PlaceRow } from './place-mapper';
+ 
+ const { places, cardProviders, placeCardClaims } = schema;
+ type Database = Pick<PostgresJsDatabase<typeof schema>, 'select'>;
+ type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
+ 
++/**
++ * Kolumny obiektu dla listy i szczegółów. Pomijamy surowe dane OSM (osm_tags, historia edycji,
++ * oryginalne godziny), których frontend nie pokazuje – przy „otwarte teraz” czytamy wszystkie
++ * pasujące wiersze, więc każdy zbędny bajt idzie razy liczba obiektów.
++ */
++const placeColumns = (() => {
++  const {
++    id, slug, name, category, description, addressStreet, addressHouseNumber, postalCode,
++    city, citySlug, location, openingHours, website, phone, amenities, prices, createdAt, updatedAt,
++  } = getTableColumns(places);
++  return {
++    id, slug, name, category, description, addressStreet, addressHouseNumber, postalCode,
++    city, citySlug, location, openingHours, website, phone, amenities, prices, createdAt, updatedAt,
++  } satisfies Record<keyof PlaceRow, unknown>;
++})();
++
++const emptyCardStats = (): CardStatsResponse => ({
++  total: 0,
++  providers: CARD_PROVIDER_SLUGS.map((provider) => ({ provider, accepted: 0, conditional: 0, notAccepted: 0, unknown: 0 })),
++});
++
+ export interface CityOption {
+   slug: string;
+   name: string;
+@@ -31,7 +52,7 @@ function boundedInteger(value: number | undefined, fallback: number, min: number
+ }
+ 
+ export function createPlacesService(database: Database) {
+-  async function loadDetails(rows: (typeof places.$inferSelect)[]): Promise<PlaceDetails[]> {
++  async function loadDetails(rows: PlaceRow[]): Promise<PlaceDetails[]> {
+     if (!rows.length) return [];
+     const claims = await database.select({
+       ...getTableColumns(placeCardClaims), providerSlug: cardProviders.slug,
+@@ -105,8 +126,8 @@ export function createPlacesService(database: Database) {
+       ? [sql`extensions.st_distance(${places.location}::extensions.geography,
+           extensions.st_setsrid(extensions.st_makepoint(${point.lng}, ${point.lat}), 4326)::extensions.geography)`, asc(places.name), asc(places.id)]
+       : [asc(places.name), asc(places.id)];
+-    const selection = database.select().from(places).where(where).orderBy(...order);
+-    let rows: (typeof places.$inferSelect)[];
++    const selection = database.select(placeColumns).from(places).where(where).orderBy(...order);
++    let rows: PlaceRow[];
+     let total: number;
+     if (query.openNow) {
+       // Godziny mają format aplikacji; filtrujemy przed paginacją i liczeniem wyników.
+@@ -169,7 +190,7 @@ export function createPlacesService(database: Database) {
+ 
+   async function getPlacesBySlugs(slugs: string[]): Promise<PlaceSummary[]> {
+     if (!slugs.length) return [];
+-    const rows = await database.select().from(places)
++    const rows = await database.select(placeColumns).from(places)
+       .where(and(eq(places.isPublished, true), inArray(places.slug, [...new Set(slugs)])));
+     const bySlug = new Map((await loadDetails(rows)).map((place) => [place.slug, toSummary(place)]));
+     return slugs.flatMap((slug) => {
+@@ -180,7 +201,7 @@ export function createPlacesService(database: Database) {
+ 
+   async function getCardStats(query: Omit<Filterable, 'cards'>): Promise<CardStatsResponse> {
+     const now = new Date();
+-    const rows = await database.select().from(places).where(buildWhere({ ...query, cards: [] }));
++    const rows = await database.select(placeColumns).from(places).where(buildWhere({ ...query, cards: [] }));
+     const matching = query.openNow ? rows.filter((row) => isOpenNow(row.openingHours, now)) : rows;
+     const details = await loadDetails(matching);
+     const providers = CARD_PROVIDER_SLUGS.map((provider) => {
+@@ -198,8 +219,52 @@ export function createPlacesService(database: Database) {
+     return { total: details.length, providers };
+   }
+ 
++  /**
++   * Statystyki kart dla wszystkich miast naraz („polska” = suma): dwa zapytania agregujące w bazie
++   * zamiast pobierania wszystkich obiektów i ich kart osobno dla każdego miasta.
++   * Semantyka jak w getCardStats: brak potwierdzenia lub wygasłe potwierdzenie = unknown.
++   */
++  async function getCardStatsByCity(): Promise<Record<string, CardStatsResponse>> {
++    const published = eq(places.isPublished, true);
++    const [totals, claims] = await Promise.all([
++      database.select({ city: places.citySlug, total: count() })
++        .from(places).where(published).groupBy(places.citySlug),
++      database.select({ city: places.citySlug, provider: cardProviders.slug, status: placeCardClaims.status, total: count() })
++        .from(placeCardClaims)
++        .innerJoin(places, eq(places.id, placeCardClaims.placeId))
++        .innerJoin(cardProviders, eq(cardProviders.id, placeCardClaims.providerId))
++        .where(and(
++          published,
++          inArray(placeCardClaims.status, ['accepted', 'conditional', 'not_accepted']),
++          or(isNull(placeCardClaims.expiresAt), sql`${placeCardClaims.expiresAt} > now()`),
++        ))
++        .groupBy(places.citySlug, cardProviders.slug, placeCardClaims.status),
++    ]);
++
++    const result: Record<string, CardStatsResponse> = {};
++    const statsFor = (city: string) => (result[city] ??= emptyCardStats());
++    const areasOf = (city: string | null) => (city ? [ALL_CITIES_SLUG, city] : [ALL_CITIES_SLUG]);
++    for (const row of totals) {
++      for (const area of areasOf(row.city)) statsFor(area).total += row.total;
++    }
++    for (const row of claims) {
++      for (const area of areasOf(row.city)) {
++        const counts = statsFor(area).providers.find((p) => p.provider === row.provider);
++        if (!counts) continue; // operator spoza listy kart obsługiwanych przez aplikację
++        if (row.status === 'accepted') counts.accepted += row.total;
++        else if (row.status === 'conditional') counts.conditional += row.total;
++        else counts.notAccepted += row.total;
++      }
++    }
++    for (const stats of Object.values(result)) {
++      for (const p of stats.providers) p.unknown = stats.total - p.accepted - p.conditional - p.notAccepted;
++    }
++    result[ALL_CITIES_SLUG] ??= emptyCardStats();
++    return result;
++  }
++
+   async function getPlaceBySlug(slug: string): Promise<PlaceDetails | null> {
+-    const rows = await database.select().from(places)
++    const rows = await database.select(placeColumns).from(places)
+       .where(and(eq(places.slug, slug), eq(places.isPublished, true))).limit(1);
+     return (await loadDetails(rows))[0] ?? null;
+   }
+@@ -217,5 +282,5 @@ export function createPlacesService(database: Database) {
+     ];
+   }
+ 
+-  return { searchPlaces, searchMapPoints, getPlaceBySlug, getPlacesBySlugs, getCardStats, getCityOptions };
++  return { searchPlaces, searchMapPoints, getPlaceBySlug, getPlacesBySlugs, getCardStats, getCardStatsByCity, getCityOptions };
+ }
+diff --git a/tests/db/seed-data.test.ts b/tests/db/seed-data.test.ts
+index ed542cd..550ba0f 100644
+--- a/tests/db/seed-data.test.ts
++++ b/tests/db/seed-data.test.ts
+@@ -12,10 +12,10 @@ test("seed zawiera 4 operatorów, 20 miejsc, 15 publikacji i 60 informacji o kar
+   assert.equal(SEED_PLACES.filter(({ place }) => place.isPublished).length, 15);
+   assert.equal(SEED_PLACES.reduce((count, { claims }) => count + claims.length, 0), 60);
+   assert.equal(new Set(SEED_PLACES.map(({ place }) => place.slug)).size, 20);
+-  assert.deepEqual(
+-    new Set(SEED_PLACES.map(({ place }) => place.category)),
+-    new Set(CATEGORY_SLUGS),
+-  );
++  // Dane demo obejmują pierwotnych 6 kategorii; nowe (tenis, taniec) pochodzą z danych w bazie.
++  const used = new Set(SEED_PLACES.map(({ place }) => place.category));
++  assert.deepEqual(used, new Set(["silownia", "basen", "fitness", "joga", "wspinaczka", "squash"]));
++  for (const category of used) assert.ok((CATEGORY_SLUGS as readonly string[]).includes(category));
+ });
+ 
+ test("każde miejsce jest jawnie fikcyjne i ma poprawny punkt WGS84", () => {
+diff --git a/tests/server/places-service.test.ts b/tests/server/places-service.test.ts
+index d8efaf1..6a2e186 100644
+--- a/tests/server/places-service.test.ts
++++ b/tests/server/places-service.test.ts
+@@ -175,3 +175,42 @@ test('statystyki kart traktują brak i wygasłe potwierdzenia jako unknown', asy
+   assert.match(queries[0].sql, /"is_published" = \$\d+/);
+   assert.ok(queries[0].params.includes('lodz'));
+ });
++
++test('statystyki wszystkich miast liczone w bazie dwoma zapytaniami agregującymi', async () => {
++  const database = drizzle.mock({ schema });
++  const queries: { sql: string; params: unknown[] }[] = [];
++  const select = database.select.bind(database) as typeof database.select;
++  database.select = ((fields?: Parameters<typeof select>[0]) => {
++    const builder = fields ? select(fields) : select();
++    const from = builder.from.bind(builder);
++    builder.from = ((table: Parameters<typeof from>[0]) => {
++      const query = from(table);
++      query.execute = (async () => {
++        queries.push(query.toSQL());
++        return table === schema.placeCardClaims
++          ? [
++            { city: 'lodz', provider: 'multisport', status: 'accepted', total: 1 },
++            { city: 'lodz', provider: 'multisport', status: 'conditional', total: 1 },
++            { city: null, provider: 'beactive', status: 'not_accepted', total: 2 },
++            { city: 'lodz', provider: 'nieznany-operator', status: 'accepted', total: 5 },
++          ]
++          : [{ city: 'lodz', total: 3 }, { city: null, total: 2 }];
++      }) as typeof query.execute;
++      return query;
++    }) as typeof builder.from;
++    return builder;
++  }) as typeof database.select;
++
++  const stats = await createPlacesService(database).getCardStatsByCity();
++  assert.equal(queries.length, 2);
++  for (const query of queries) {
++    assert.match(query.sql, /"is_published" = \$\d+/);
++    assert.match(query.sql, /group by/);
++  }
++  assert.match(queries[1].sql, /"expires_at" > now\(\)/);
++  assert.equal(stats.lodz.total, 3);
++  assert.deepEqual(stats.lodz.providers[0], { provider: 'multisport', accepted: 1, conditional: 1, notAccepted: 0, unknown: 1 });
++  assert.equal(stats.polska.total, 5);
++  assert.deepEqual(stats.polska.providers[1], { provider: 'beactive', accepted: 0, conditional: 0, notAccepted: 2, unknown: 3 });
++  assert.ok(stats.polska.providers.slice(2).every((provider) => provider.unknown === 5));
++});
+diff --git a/vercel.json b/vercel.json
+index 8c9dacf..057f9ae 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -2,5 +2,6 @@
+   "$schema": "https://openapi.vercel.sh/vercel.json",
+   "framework": "nextjs",
+   "installCommand": "npm ci",
+-  "buildCommand": "npm run build"
++  "buildCommand": "npm run build",
++  "regions": ["fra1"]
+ }

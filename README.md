@@ -4,9 +4,9 @@ Wyszukiwarka obiektów sportowych z obsługą kart partnerskich.
 
 Stack: Next.js na Vercel, PostgreSQL/PostGIS w Supabase, MapLibre GL JS
 z zewnętrznym dostawcą stylu i kafelków (propozycja dla MVP: MapTiler).
-Lokalnie baza działa w Dockerze.
+Lokalna aplikacja i wdrożenie korzystają z bazy w Supabase.
 
-Pełny plan i podział pracy: [plan projektu](podsumowanie_projektu_wyszukiwarka_obiekt_w_multisport_beactive.md).
+Założenia projektu: [podsumowanie projektu](SUMMARY.md).
 
 ## Stan projektu
 
@@ -14,12 +14,7 @@ Repozytorium zawiera aplikację Next.js z wyszukiwarką, mapą MapLibre
 i backendem PostgreSQL/PostGIS oraz migrację i seed danych demonstracyjnych.
 Frontend odczytuje opublikowane obiekty z bazy przy każdym żądaniu.
 
-## Lokalna baza
-
-```powershell
-docker compose up -d db
-docker compose ps
-```
+## Połączenie z Supabase
 
 Jeśli nie masz jeszcze `.env.local`, skopiuj `.env.example`:
 
@@ -28,9 +23,11 @@ Copy-Item .env.example .env.local
 ```
 
 Jeśli plik już istnieje, dopisz brakujące wartości ręcznie; nie nadpisuj go.
-Parametry bazy lokalnej są w `docker-compose.yml` i `.env.example`.
-Nie używamy lokalnego hasła w chmurze. Każda osoba uruchamia własną bazę Docker;
-bazą wspólną dla wdrożenia testowego jest Supabase staging.
+Uzupełnij `DATABASE_URL` i `DATABASE_MIGRATION_URL` adresami skopiowanymi
+z **Supabase → Connect**, zgodnie z opisem poniżej. `.env.example` pozostawia
+te wartości puste; aplikacja wymaga skonfigurowanego `DATABASE_URL`.
+Oba adresy powinny wskazywać ten sam projekt Supabase.
+Bazą wspólną dla lokalnego developmentu i wdrożenia testowego jest Supabase staging.
 
 ## Co robimy teraz
 
@@ -39,7 +36,7 @@ bazą wspólną dla wdrożenia testowego jest Supabase staging.
 2. **Osoba 2 — backend:** dodaje Drizzle, migracje, idempotentny seed 20 obiektów,
    `GET /api/health` i `GET /api/places` w Route Handlers Next.js.
    Przygotowuje skrypty `db:generate`, `db:migrate` i `db:seed`,
-   ładowanie `.env.local` oraz zgodność schematów PostGIS Docker/Supabase.
+   ładowanie `.env.local` oraz zgodność migracji ze schematem PostGIS w Supabase.
 3. **Osoba 3 — hosting:** tworzy Supabase staging, włącza PostGIS i pg_trgm,
    udostępnia połączenia backendowi, podłącza repo do Vercel po otrzymaniu scaffolda,
    konfiguruje zmienne Preview i dostawcę kafelków. Następnie uruchamia
@@ -60,7 +57,7 @@ bazą wspólną dla wdrożenia testowego jest Supabase staging.
   i ustawiamy osobne zmienne Production. Hasła/sekretne klucze pozostają poza Git.
 
 Adresy połączeń kopiujemy z **Supabase → Connect**, bez zgadywania hostów.
-Vercel nie uruchamia Docker Compose i nie korzysta z bazy na Twoim localhost.
+Zarówno lokalny Next.js, jak i Vercel łączą się z wybranym projektem Supabase.
 
 Pierwszy cel: adres Vercel preview, `/api/health` zwracający 200
 i `/api/places` zwracający dane z seeda w Supabase.
