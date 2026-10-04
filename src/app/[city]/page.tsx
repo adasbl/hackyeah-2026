@@ -83,7 +83,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   return (
     <div className="relative isolate">
       <Backdrop />
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
         {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
         <div className="relative z-20 animate-fade-up">
           <SearchForm
@@ -97,7 +97,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           />
         </div>
 
-        <div className="mb-5 mt-8 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-5 mt-6 flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0 flex-1 basis-72">
             <h1 className="text-balance text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
               {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'} {placeLabel}

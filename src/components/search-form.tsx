@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, CreditCard, Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useId, useState, useTransition } from 'react';
+import { useId, useRef, useState, useTransition } from 'react';
 import type { CardProviderSlug, CategorySlug } from '@repo/types';
 import { ALL_CITIES_SLUG, CARD_PROVIDERS, categoryOf, cityName, providerName, slugify } from '@/lib/catalog';
 import type { CityOption } from '@/lib/data/places';
@@ -43,9 +43,10 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
   }
   const [category, setCategory] = useState<CategorySlug | ''>(initialCategory ?? '');
   const [cards, setCards] = useState<CardProviderSlug[]>(initialCards);
-  // Telefon + strona wyników: formularz zwinięty do jednego paska, żeby wyniki były widać od razu.
+  // Na stronie wyników formularz jest zwinięty do paska na każdym ekranie.
   const [expanded, setExpanded] = useState(false);
   const formId = useId();
+  const summaryRef = useRef<HTMLButtonElement>(null);
 
   const toggleCard = (slug: CardProviderSlug) =>
     setCards((prev) =>
@@ -53,6 +54,12 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
         ? prev.filter((c) => c !== slug)
         : CARD_PROVIDERS.map((p) => p.slug).filter((s) => s === slug || prev.includes(s)),
     );
+
+  function search(url: string) {
+    setExpanded(false);
+    summaryRef.current?.focus();
+    startTransition(() => router.push(url, { scroll: true }));
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,14 +75,14 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
         category: category || undefined,
         cards,
       });
-      startTransition(() => router.push(url));
+      search(url);
       return;
     }
     const typed = slugify(city.text);
     const slug = city.slug ?? (cityOptions.find((c) => slugify(c.name) === typed)?.slug || typed || ALL_CITIES_SLUG);
     // Inne miasto = inny obszar: punkt „w pobliżu” przestaje pasować, zostają fraza i „otwarte teraz”.
     const keep = slug === initialCitySlug && !initialNear ? preserved : { q: preserved?.q, open: preserved?.open, view: preserved?.view };
-    startTransition(() => router.push(buildSearchUrl(slug, { ...keep, category: category || undefined, cards })));
+    search(buildSearchUrl(slug, { ...keep, category: category || undefined, cards }));
   }
 
   const hero = variant === 'hero';
@@ -92,21 +99,23 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
     <>
       {collapsible && (
         <button
+          ref={summaryRef}
           type="button"
+          disabled={pending}
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls={formId}
-          className="flex w-full items-center gap-3 rounded-2xl border border-white/70 bg-white/80 p-3 text-left shadow-[0_20px_50px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl sm:hidden"
+          className="flex w-full items-center gap-3 rounded-2xl border border-white/70 bg-white/80 p-3 text-left shadow-[0_20px_50px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl transition hover:bg-white disabled:opacity-70"
         >
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white">
-            <SlidersHorizontal className="size-5" aria-hidden />
+            {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <SlidersHorizontal className="size-5" aria-hidden />}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold text-ink">{summaryCity}</span>
-            <span className="block text-sm leading-relaxed text-slate-500">{summaryDetails}</span>
+            <span className="block truncate text-sm leading-relaxed text-slate-500">{summaryDetails}</span>
           </span>
           <span className="flex shrink-0 items-center gap-1 pr-1 text-sm font-medium text-brand-600">
-            {expanded ? 'Zwiń' : 'Zmień'}
+            {pending ? 'Szukam…' : expanded ? 'Zwiń' : 'Zmień'}
             <ChevronDown className={`size-4 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden />
           </span>
         </button>
@@ -118,7 +127,7 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
         aria-label="Wyszukaj obiekt sportowy"
         className={`relative rounded-2xl border border-white/70 bg-white/80 shadow-[0_30px_80px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl ${
           hero ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
-        } ${collapsible ? `mt-2 sm:mt-0 ${expanded ? 'animate-pop' : 'hidden'} sm:block` : ''}`}
+        } ${collapsible ? `mt-2 ${expanded ? 'animate-pop' : 'hidden'}` : ''}`}
       >
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto]">
           <CityCombobox options={cityOptions} value={city} onChange={setCity} onPickNearMe={pickNearMe} locating={geo === 'locating'} />
