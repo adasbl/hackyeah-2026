@@ -110,7 +110,6 @@ npm run build
   including filling in localities and postcodes.
 - [Scanning venue websites for card acceptance statements](docs/card-website-scanning.md)
   (`npm run db:scan:cards`). The script respects robots.txt, rate limits and blocks.
-- [Demo data seed](docs/database-seed.md).
 - [Submission moderation and creating an administrator account](docs/admin-moderation.md).
 
 Data: © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright).
