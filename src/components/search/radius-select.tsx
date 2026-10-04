@@ -11,13 +11,12 @@ import { formatDistance } from '@/lib/geo';
 import { RADIUS_OPTIONS } from '@/lib/search-params';
 import { useDismiss } from './use-dismiss';
 
-/** Podpowiedź „ile to jest” – łatwiej wybrać promień, myśląc czasem dojazdu niż kilometrami. */
-const HINTS: Record<number, { text: string; icon: React.ReactNode }> = {
-  1000: { text: 'ok. 12 min pieszo', icon: <Footprints className="size-4" aria-hidden /> },
-  2000: { text: 'ok. 25 min pieszo', icon: <Footprints className="size-4" aria-hidden /> },
-  5000: { text: 'ok. 20 min rowerem', icon: <Bike className="size-4" aria-hidden /> },
-  10_000: { text: 'ok. 20 min autem', icon: <Car className="size-4" aria-hidden /> },
-  25_000: { text: 'cała okolica', icon: <MapPinned className="size-4" aria-hidden /> },
+const RADIUS_ICONS: Record<number, React.ReactNode> = {
+  1000: <Footprints className="size-4" aria-hidden />,
+  2000: <Footprints className="size-4" aria-hidden />,
+  5000: <Bike className="size-4" aria-hidden />,
+  10_000: <Car className="size-4" aria-hidden />,
+  25_000: <MapPinned className="size-4" aria-hidden />,
 };
 
 interface Props {
@@ -104,7 +103,6 @@ export function RadiusSelect({ value, onChange }: Props) {
           </li>
           {RADIUS_OPTIONS.map((r, i) => {
             const selected = r === value;
-            const hint = HINTS[r];
             return (
               <li
                 key={r}
@@ -123,11 +121,10 @@ export function RadiusSelect({ value, onChange }: Props) {
                     selected ? 'bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
                   }`}
                 >
-                  {hint?.icon}
+                  {RADIUS_ICONS[r]}
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-semibold tabular-nums">{formatDistance(r)}</span>
-                  {hint && <span className="text-xs text-slate-500">{hint.text}</span>}
+                <span className="min-w-0 flex-1 text-sm font-semibold tabular-nums">
+                  {formatDistance(r)}
                 </span>
                 {selected && <Check className="size-4 shrink-0 text-brand-600" strokeWidth={2.5} aria-hidden />}
               </li>

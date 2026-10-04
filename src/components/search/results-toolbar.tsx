@@ -1,9 +1,9 @@
 'use client';
 
-import { ArrowDownAZ, Clock, List, Loader2, LocateFixed, Map as MapIcon, Navigation, X } from 'lucide-react';
+import { ArrowDownAZ, ChevronDown, Clock, List, Loader2, LocateFixed, Map as MapIcon, Navigation, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useId, useTransition } from 'react';
 import type { PlacesSort } from '@repo/types';
 import { ALL_CITIES_SLUG } from '@/lib/catalog';
 import { buildSearchUrl, DEFAULT_RADIUS, hasLocation, type ResultView, type SearchFilters } from '@/lib/search-params';
@@ -97,7 +97,8 @@ export function FilterChips({ city, filters, variant = 'toolbar' }: Props & { va
 }
 
 /** Sortowanie listy: po nazwie albo od najbliższych (pyta o lokalizację, jeśli jej jeszcze nie ma). */
-export function SortToggle({ city, filters }: Props) {
+export function SortSelect({ city, filters }: Props) {
+  const selectId = useId();
   const { url, go, pending } = useResultsNav({ city, filters });
   const { state: geo, locate } = useGeolocation();
   const located = hasLocation(filters);
@@ -115,19 +116,26 @@ export function SortToggle({ city, filters }: Props) {
 
   const busy = pending || geo === 'locating';
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div role="radiogroup" aria-label="Sortowanie" className="inline-flex h-12 items-center rounded-full border border-slate-200 bg-white/90 p-1 shadow-sm backdrop-blur">
-        <Segment active={filters.sort === 'name'} onClick={() => sortBy('name')} icon={<ArrowDownAZ className="size-5" aria-hidden />}>
-          Nazwa
-        </Segment>
-        <Segment
-          active={filters.sort === 'distance'}
-          onClick={() => sortBy('distance')}
-          icon={busy && filters.sort !== 'distance' ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Navigation className="size-5" aria-hidden />}
+    <div className="flex w-full flex-col gap-2 sm:w-48">
+      <label htmlFor={selectId} className="pl-1 text-xs font-bold uppercase tracking-wider text-slate-600">Sortowanie</label>
+      <div className="relative">
+        <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">
+          {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : filters.sort === 'distance' ? <Navigation className="size-5" aria-hidden /> : <ArrowDownAZ className="size-5" aria-hidden />}
+        </span>
+        <select
+          id={selectId}
+          value={filters.sort}
+          onChange={(event) => sortBy(event.target.value as PlacesSort)}
+          disabled={busy}
+          aria-busy={busy}
+          className="h-12 w-full appearance-none rounded-2xl border border-slate-200 bg-white/90 pl-12 pr-10 text-[15px] font-semibold text-ink shadow-sm backdrop-blur transition hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
         >
-          Najbliżej
-        </Segment>
+          <option value="name">Nazwa</option>
+          <option value="distance">Najbliżej</option>
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-500" aria-hidden />
       </div>
+      {busy && <span className="sr-only" role="status">{geo === 'locating' ? 'Ustalam lokalizację…' : 'Wczytywanie wyników…'}</span>}
       {GEO_ERROR_LABEL[geo] && (
         <p className="text-sm text-rose-700" role="alert">
           {GEO_ERROR_LABEL[geo]}
@@ -140,45 +148,31 @@ export function SortToggle({ city, filters }: Props) {
 /** Przełącznik Lista / Mapa – zapisany w URL (view=map), więc odświeżenie i „wstecz” go pamiętają. */
 export function ViewToggle({ city, filters }: Props) {
   const views: { value: ResultView; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Lista', icon: <List className="size-5" aria-hidden /> },
-    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-5" aria-hidden /> },
+    { value: 'list', label: 'Lista', icon: <List className="size-6" aria-hidden /> },
+    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-6" aria-hidden /> },
   ];
   return (
-    <nav aria-label="Widok wyników" className="inline-flex h-12 items-center rounded-full border border-slate-200 bg-white/90 p-1 shadow-sm backdrop-blur">
-      {views.map((v) => {
-        const active = filters.view === v.value;
-        return (
-          <Link
-            key={v.value}
-            href={buildSearchUrl(city, { ...filters, view: v.value })}
-            scroll={false}
-            aria-current={active ? 'page' : undefined}
-            className={`flex h-full items-center gap-2 rounded-full px-5 text-[15px] font-semibold transition ${
-              active ? 'bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-md shadow-brand-600/25' : 'text-slate-600 hover:text-ink'
-            }`}
-          >
-            {v.icon}
-            {v.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-function Segment({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={active}
-      onClick={onClick}
-      className={`flex h-full items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition ${
-        active ? 'bg-ink text-white shadow-sm' : 'text-slate-600 hover:text-ink'
-      }`}
-    >
-      {icon}
-      {children}
-    </button>
+    <div className="flex w-full flex-col gap-2 sm:w-auto">
+      <span className="pl-1 text-xs font-bold uppercase tracking-wider text-slate-600">Widok wyników</span>
+      <nav aria-label="Widok wyników" className="inline-flex h-12 items-center gap-1 rounded-2xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
+        {views.map((v) => {
+          const active = filters.view === v.value;
+          return (
+            <Link
+              key={v.value}
+              href={buildSearchUrl(city, { ...filters, view: v.value })}
+              scroll={false}
+              aria-current={active ? 'page' : undefined}
+              className={`flex h-full min-w-24 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-bold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] ${
+                active ? 'bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-md shadow-brand-600/30 ring-1 ring-inset ring-white/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {v.icon}
+              {v.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

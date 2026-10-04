@@ -80,10 +80,10 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
           <MapPin className="size-5 shrink-0 text-slate-400 transition group-focus-within:text-brand-600" aria-hidden />
         )}
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Miasto</span>
           <input
             ref={inputRef}
             role="combobox"
+            aria-label="Gdzie szukasz?"
             aria-expanded={open}
             aria-controls={listId}
             aria-autocomplete="list"

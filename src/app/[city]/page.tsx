@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Backdrop } from '@/components/backdrop';
 import { PlacesMapLazy } from '@/components/map/places-map-lazy';
 import { PlaceCard } from '@/components/place-card';
-import { FilterChips, SortToggle, ViewToggle } from '@/components/search/results-toolbar';
+import { FilterChips, SortSelect, ViewToggle } from '@/components/search/results-toolbar';
 import { SearchForm } from '@/components/search-form';
 import { ALL_CITIES_SLUG, categoryOf, cityLocative, cityName, providerName } from '@/lib/catalog';
 import { getCityOptions, searchMapPoints, searchPlaces } from '@/lib/data/places';
@@ -109,27 +109,25 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
               {located && filters.sort === 'distance' && <> · od najbliższych</>}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {hasFilters && (
-              <Link
-                href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
-                className="flex h-12 items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-4 text-sm font-medium text-slate-600 shadow-sm backdrop-blur transition hover:border-slate-300 hover:text-ink"
-              >
-                <X className="size-3.5" aria-hidden />
-                Wyczyść filtry
-              </Link>
-            )}
-            <ViewToggle city={city} filters={filters} />
-          </div>
+          {hasFilters && (
+            <Link
+              href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
+              className="flex h-12 items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-4 text-sm font-medium text-slate-600 shadow-sm backdrop-blur transition hover:border-slate-300 hover:text-ink"
+            >
+              <X className="size-3.5" aria-hidden />
+              Wyczyść filtry
+            </Link>
+          )}
         </div>
 
         {/* Lista: filtry + sortowanie nad wynikami. Mapa: filtry leżą na samej mapie, a sortowanie nie ma sensu. */}
-        {(isList || !hasResults) && (
-          <div className="relative z-10 mb-5 flex flex-wrap items-start justify-between gap-3">
-            <FilterChips city={city} filters={filters} />
-            {isList && items.length > 0 && <SortToggle city={city} filters={filters} />}
+        <div className="relative z-10 mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          {(isList || !hasResults) && <FilterChips city={city} filters={filters} />}
+          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:items-start lg:ml-auto">
+            <ViewToggle city={city} filters={filters} />
+            {isList && items.length > 0 && <SortSelect city={city} filters={filters} />}
           </div>
-        )}
+        </div>
 
         {!hasResults ? (
           <div className="animate-fade-up rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center backdrop-blur">
