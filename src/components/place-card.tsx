@@ -15,8 +15,8 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
 
   // Serduszko jest przyciskiem OBOK linku (nie w środku) – przycisk w <a> to niepoprawny HTML.
   return (
-    <article className="group relative h-full rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-brand-500/50 hover:shadow-md hover:shadow-slate-900/5">
-      <Link href={`/places/${place.slug}`} className="flex h-full flex-col rounded-[inherit] p-4 sm:p-5">
+    <article className="group relative h-full min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-brand-500/50 hover:shadow-md hover:shadow-slate-900/5">
+      <Link href={`/places/${place.slug}`} className="flex h-full min-w-0 flex-col rounded-[inherit] p-4">
         <div className="flex items-center gap-3 pr-9">
           <CategoryBadge category={place.category} size="sm" />
           <p className="min-w-0 text-sm font-medium text-slate-500">{category.name}</p>
@@ -39,7 +39,7 @@ export function PlaceCard({ place }: { place: PlaceSummary }) {
         </div>
 
         <div className="mt-4 border-t border-slate-100 pt-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 xl:grid xl:grid-cols-2">
             {claims.map((c) => (
               <CardStatusBadge key={c.provider} claim={c} />
             ))}

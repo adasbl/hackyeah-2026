@@ -83,7 +83,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   return (
     <div data-results-view={filters.view} className={`relative isolate ${!isList ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
       <Backdrop />
-      <div className={`results-layout mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 ${!isList ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
+      <div className={`results-layout mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 ${!isList ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
         <div className="results-controls">
           {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
           <div className="relative z-20 animate-fade-up">
@@ -173,9 +173,9 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           </div>
         ) : (
           <>
-            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {items.map((p, i) => (
-                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 5) * 25}ms` }}>
+                <li key={p.id} className="min-w-0 animate-fade-up" style={{ animationDelay: `${Math.min(i, 5) * 25}ms` }}>
                   <PlaceCard place={p} />
                 </li>
               ))}

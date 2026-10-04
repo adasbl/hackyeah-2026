@@ -14,7 +14,7 @@ export default async function HomePage() {
   return (
     <section className="relative isolate flex flex-1 flex-col">
       <Backdrop />
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
         <div className="mb-7 max-w-3xl animate-fade-up">
           <h1 className="text-balance text-3xl font-bold leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
             Znajdź obiekt <span className="bg-gradient-to-r from-brand-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">dla swojej karty</span>

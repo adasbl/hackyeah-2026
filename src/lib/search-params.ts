@@ -9,7 +9,7 @@ import {
   type PlacesSort,
 } from '@repo/types';
 
-export const PAGE_SIZE = 10;
+export const PAGE_SIZE = 12;
 
 /** Promienie do wyboru w „W pobliżu mnie” (metry). */
 export const RADIUS_OPTIONS = [1000, 2000, 5000, 10_000, 25_000] as const;
