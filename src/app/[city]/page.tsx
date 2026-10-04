@@ -97,37 +97,39 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           />
         </div>
 
-        <div className="mb-5 mt-6 flex flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0 flex-1 basis-72">
-            <h1 className="text-balance text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
+        <div className="mb-5 mt-6">
+          <div className="flex items-center justify-between gap-3 sm:gap-6">
+            <h1 className="min-w-0 flex-1 text-balance text-xl font-bold leading-tight tracking-tight sm:text-2xl lg:text-3xl">
               {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'} {placeLabel}
             </h1>
-            <p className="mt-1 text-sm text-slate-500" aria-live="polite">
+            <ViewToggle city={city} filters={filters} />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 text-sm text-slate-500" aria-live="polite">
               {total === 0 ? 'Brak wyników' : `${total} ${plural(total, 'obiekt', 'obiekty', 'obiektów')}`}
               {filters.cards.length > 0 && <> · karty: {filters.cards.map(providerName).join(' + ')}</>}
               {filters.open && <> · otwarte teraz</>}
               {located && filters.sort === 'distance' && <> · od najbliższych</>}
             </p>
+            {hasFilters && (
+              <Link
+                href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
+                className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-ink"
+              >
+                <X className="size-3.5" aria-hidden />
+                Wyczyść filtry
+              </Link>
+            )}
           </div>
-          {hasFilters && (
-            <Link
-              href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
-              className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-ink"
-            >
-              <X className="size-3.5" aria-hidden />
-              Wyczyść filtry
-            </Link>
-          )}
         </div>
 
         {/* Lista: filtry + sortowanie nad wynikami. Mapa: filtry leżą na samej mapie, a sortowanie nie ma sensu. */}
-        <div className="relative z-10 mb-6 flex flex-col gap-4 border-y border-slate-200 py-4 lg:flex-row lg:items-end lg:justify-between">
-          {(isList || !hasResults) && <FilterChips city={city} filters={filters} />}
-          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:items-start lg:ml-auto">
-            <ViewToggle city={city} filters={filters} />
+        {(isList || !hasResults) && (
+          <div className="relative z-10 mb-6 flex flex-col gap-4 border-y border-slate-200 py-4 sm:flex-row sm:items-end sm:justify-between">
+            <FilterChips city={city} filters={filters} />
             {isList && items.length > 0 && <SortSelect city={city} filters={filters} />}
           </div>
-        </div>
+        )}
 
         {!hasResults ? (
           <div className="animate-fade-up rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center backdrop-blur">

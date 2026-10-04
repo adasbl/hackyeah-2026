@@ -164,32 +164,30 @@ export function ViewToggle({ city, filters }: Props) {
     { value: 'map', label: 'Mapa', icon: <MapIcon className="size-4" aria-hidden /> },
   ];
   return (
-    <div className="flex w-full flex-col gap-2 sm:w-auto">
-      <span className="text-sm font-medium text-slate-600">Widok wyników</span>
-      <nav aria-label="Widok wyników" className="inline-flex h-12 items-center gap-1 rounded-xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
-        {views.map((v) => {
-          const active = filters.view === v.value;
-          return (
-            <Link
-              key={v.value}
-              href={buildSearchUrl(city, { ...filters, view: v.value })}
-              // Dynamiczna strona potrzebuje pełnego prefetch, razem z wynikami z serwera.
-              prefetch={!active}
-              onPointerEnter={v.value === 'map' ? preloadPlacesMap : undefined}
-              onFocus={v.value === 'map' ? preloadPlacesMap : undefined}
-              onTouchStart={v.value === 'map' ? preloadPlacesMap : undefined}
-              scroll={false}
-              aria-current={active ? 'page' : undefined}
-              className={`flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] sm:min-w-24 sm:px-4 ${
-                active ? 'bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-md shadow-brand-600/30 ring-1 ring-inset ring-white/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              {v.icon}
-              {v.label}
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+    <nav aria-label="Widok wyników" className="inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
+      {views.map((v) => {
+        const active = filters.view === v.value;
+        return (
+          <Link
+            key={v.value}
+            href={buildSearchUrl(city, { ...filters, view: v.value })}
+            // Dynamiczna strona potrzebuje pełnego prefetch, razem z wynikami z serwera.
+            prefetch={!active}
+            onPointerEnter={v.value === 'map' ? preloadPlacesMap : undefined}
+            onFocus={v.value === 'map' ? preloadPlacesMap : undefined}
+            onTouchStart={v.value === 'map' ? preloadPlacesMap : undefined}
+            scroll={false}
+            aria-current={active ? 'page' : undefined}
+            aria-label={v.label}
+            className={`flex h-full min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] sm:min-w-20 ${
+              active ? 'bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-md shadow-brand-600/30 ring-1 ring-inset ring-white/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            {v.icon}
+            <span className="sr-only sm:not-sr-only">{v.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
