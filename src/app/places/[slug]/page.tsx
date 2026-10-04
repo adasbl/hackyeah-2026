@@ -68,7 +68,8 @@ export default async function PlaceDetailsPage({ params }: Props) {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{category.name}</p>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{place.name}</h1>
           <p className="mt-1 text-slate-600">
-            {place.address.street}, {place.address.postalCode} {place.address.city}
+            {[place.address.street, [place.address.postalCode, place.address.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
+            {!place.address.street && <span className="block text-sm text-slate-500">Dokładny adres nie został jeszcze uzupełniony.</span>}
           </p>
           <OpenStatus hours={place.openingHours} className="mt-2" />
         </div>
@@ -187,6 +188,9 @@ export default async function PlaceDetailsPage({ params }: Props) {
 
           <section aria-labelledby="hours-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
             <h2 id="hours-h" className="mb-3 font-semibold">Godziny otwarcia</h2>
+            {place.openingHours.length === 0 && (
+              <p className="text-sm text-slate-500">Brak opracowanych godzin otwarcia. Sprawdź je na stronie obiektu lub telefonicznie.</p>
+            )}
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
               {place.openingHours.map((h) => {
                 const isToday = entryCoversDay(h, today);
@@ -201,6 +205,9 @@ export default async function PlaceDetailsPage({ params }: Props) {
                 );
               })}
             </dl>
+            {place.openingHours.length > 0 && (
+              <p className="mt-3 text-xs text-slate-500">Regularne godziny mogą różnić się w święta. Warunki wejścia i godziny recepcji sprawdź na stronie klubu.</p>
+            )}
           </section>
 
           <section aria-labelledby="prices-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
@@ -216,7 +223,11 @@ export default async function PlaceDetailsPage({ params }: Props) {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-slate-400">Ceny mogą się zmienić. Aktualizacja: {formatDate(place.updatedAt)}.</p>
+            {place.prices.length === 0 ? (
+              <p className="text-sm text-slate-500">Brak informacji o cenach. Sprawdź aktualny cennik obiektu.</p>
+            ) : (
+              <p className="mt-3 text-xs text-slate-400">Ceny mogą się zmienić. Aktualizacja: {formatDate(place.updatedAt)}.</p>
+            )}
           </section>
 
           {place.amenities.length > 0 && (

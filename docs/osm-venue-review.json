@@ -1,0 +1,44 @@
+[
+  {
+    "slug": "osm-way-96107907",
+    "checkedOn": "2026-10-04",
+    "sourceUrl": "https://www.crossfitursynow.pl/kontakt/",
+    "status": "source_conflict",
+    "notes": "Strona kontaktowa podaje Wacława Lachmana 3, 02-768 Warszawa, telefon +48 572 787 402 i godziny pon–pt 06:00–21:00, sob–nd 08:00–12:30. OSM zawiera numer 5A, inny telefon i inne godziny. Przed publikacją wyjaśnić adres i sprawdzić punkt mapy; nie przesuwać go na podstawie samego numeru budynku.",
+    "suggestedCorrections": {
+      "addressHouseNumber": "3",
+      "postalCode": "02-768",
+      "phone": "+48572787402",
+      "openingHours": [
+        { "days": "pon–pt", "hours": "06:00–21:00" },
+        { "days": "sob–nd", "hours": "08:00–12:30" }
+      ]
+    }
+  },
+  {
+    "slug": "osm-node-8890564221",
+    "checkedOn": "2026-10-04",
+    "sourceUrl": "https://mokotowskigym.com/",
+    "status": "source_conflict",
+    "notes": "Adres Białej Floty 2 zgadza się ze stroną. Strona podaje inny telefon niż OSM i rozróżnia całodobowy dostęp z kluczem od godzin recepcji. Przed publikacją opracować godziny wraz z warunkiem dostępu; nie wyświetlać bezwarunkowo 24/7. Na stronie jest deklaracja wybranych kart, ale ten przegląd nie tworzy place_card_claims.",
+    "suggestedCorrections": {
+      "phone": "+48664099162",
+      "postalCode": "02-654"
+    }
+  },
+  {
+    "slug": "osm-node-13684155501",
+    "checkedOn": "2026-10-04",
+    "sourceUrl": "https://decepticongym.pl/kontakt/",
+    "status": "address_matches",
+    "notes": "Strona potwierdza oddział Marysin przy Goździków 29/31 i telefon zgodny z OSM. Klub ma także drugi oddział w Wesołej. Godziny nie zostały potwierdzone na stronie kontaktowej; rekord pozostaje kandydatem do przeglądu.",
+    "suggestedCorrections": { "postalCode": "04-231" }
+  },
+  {
+    "slug": "osm-node-5335200241",
+    "checkedOn": "2026-10-04",
+    "sourceUrl": "https://crossfitelektromoc.pl/",
+    "status": "website_unreachable",
+    "notes": "Próba odczytu strony zakończyła się timeoutem. Nie potwierdzono aktualnego adresu ani godzin; błąd połączenia nie oznacza zamknięcia obiektu."
+  }
+]

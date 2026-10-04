@@ -12,8 +12,10 @@
     "test": "tsx --test tests/db/*.test.ts tests/server/*.test.ts",
     "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "db:import:osm:warsaw": "tsx src/db/import-osm-warsaw.ts",
+    "db:prepare:osm:warsaw": "tsx src/db/prepare-osm-publication.ts",
+    "db:publish:osm:warsaw": "tsx src/db/publish-osm-warsaw.ts",
     "db:seed": "tsx src/db/seed.ts",
-    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/osm-warsaw.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
+    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/osm-warsaw.test.ts tests/db/osm-publication.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts"
   },
   "dependencies": {
     "@emnapi/core": "1.11.3",

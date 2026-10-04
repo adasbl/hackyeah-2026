@@ -1,0 +1,613 @@
+{
+  "checkedOn": "2026-10-04",
+  "snapshotHash": "24c28df0f262bccefd9e7510d2e3546cbff2290b2f3f147ade4bc2e5bbb30658",
+  "policy": "Publikujemy tylko potwierdzony na oficjalnej stronie konkretny oddział oferujący siłownię lub fitness. Punkt pochodzi z OSM; nie jest pomiarem wejścia. Brak potwierdzonych godzin oznacza brak godzin w aplikacji. Ceny i karty wymagają osobnego przeglądu.",
+  "approved": [
+    {
+      "slug": "osm-node-740852271",
+      "name": "Well Fitness Warszawa Bemowo",
+      "street": "Radiowa",
+      "houseNumber": "1A",
+      "postalCode": "01-485",
+      "phone": "+48692618024",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/bemowo",
+      "hours": "24/7",
+      "notes": "Potwierdzono adres, telefon, siłownię i płatne karnety; godziny klubu, nie recepcji."
+    },
+    {
+      "slug": "osm-node-11697797338",
+      "name": "Well Fitness Warszawa Gocław",
+      "street": "Generała Augusta Emila Fieldorfa „Nila”",
+      "houseNumber": "41",
+      "postalCode": "04-125",
+      "phone": "+48532352213",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/goclaw",
+      "hours": "24/7",
+      "notes": "Potwierdzono konkretny oddział, ofertę siłowni, adres i kontakt."
+    },
+    {
+      "slug": "osm-node-8980222617",
+      "name": "Well Fitness Warszawa Browary Warszawskie",
+      "street": "Grzybowska",
+      "houseNumber": "56",
+      "postalCode": "00-844",
+      "phone": "+48532566092",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/browary-warszawskie",
+      "hours": "24/7",
+      "notes": "Oficjalna strona oddziału uzupełnia brakujący adres OSM; telefon jest zgodny z tagiem mobile."
+    },
+    {
+      "slug": "osm-way-437107129",
+      "name": "Well Fitness Warszawa Ursynów",
+      "street": "Puławska",
+      "houseNumber": "423",
+      "postalCode": "02-801",
+      "phone": "+48532568101",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/ursynow",
+      "hours": "24/7",
+      "notes": "Oficjalna strona oddziału uzupełnia adres; telefon zgodny z OSM. Punkt OSM jest środkiem budynku."
+    },
+    {
+      "slug": "osm-node-1161940274",
+      "name": "Well Fitness Warszawa Skorosze",
+      "street": "Generała Felicjana Sławoja Składkowskiego",
+      "houseNumber": "4",
+      "postalCode": "02-497",
+      "phone": "+48533313122",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/skorosze",
+      "hours": "24/7",
+      "notes": "Potwierdzono konkretny oddział i kontakt zgodny z tagiem mobile; uzupełniono brakujący adres."
+    },
+    {
+      "slug": "osm-node-3983135056",
+      "name": "Well Fitness Warszawa Nowy Świat",
+      "street": "Świętokrzyska",
+      "houseNumber": "3",
+      "postalCode": "00-360",
+      "phone": "+48538656414",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/nowy-swiat",
+      "hours": "24/7",
+      "notes": "Nazwa oddziału nie jest nazwą ulicy: oficjalny adres to Świętokrzyska 3. Telefon zgodny z OSM."
+    },
+    {
+      "slug": "osm-node-5824357717",
+      "name": "Well Fitness Warszawa Wołoska",
+      "street": "Wołoska",
+      "houseNumber": "16",
+      "postalCode": "02-675",
+      "phone": "+48538656427",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/woloska",
+      "hours": "24/7",
+      "notes": "Potwierdzono adres, siłownię, godziny i kontakt zgodny z OSM."
+    },
+    {
+      "slug": "osm-node-6518179113",
+      "name": "Well Fitness Warszawa Plac Zawiszy",
+      "street": "Aleje Jerozolimskie",
+      "houseNumber": "123A",
+      "postalCode": "02-017",
+      "phone": "+48538656413",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/plac-zawiszy",
+      "hours": "24/7",
+      "notes": "Oficjalny adres nie jest placem: Aleje Jerozolimskie 123A. Telefon zgodny z OSM."
+    },
+    {
+      "slug": "osm-node-13703861125",
+      "name": "Well Fitness Warszawa Grochów",
+      "street": "Grenadierów",
+      "houseNumber": "41",
+      "postalCode": "04-073",
+      "phone": "+48882912619",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/grochow",
+      "hours": "24/7",
+      "notes": "Potwierdzono konkretny oddział, adres, ofertę i kontakt."
+    },
+    {
+      "slug": "osm-node-13703861126",
+      "name": "Well Fitness Warszawa Złote Tarasy",
+      "street": "Złota",
+      "houseNumber": "59",
+      "postalCode": "00-120",
+      "phone": "+48736442861",
+      "category": "silownia",
+      "sourceUrl": "https://wellfitness.pl/silownia/warszawa/zlote-tarasy",
+      "hours": "24/7",
+      "notes": "Potwierdzono konkretny oddział, adres, ofertę i kontakt."
+    },
+    {
+      "slug": "osm-node-12260996419",
+      "name": "Zdrofit Warszawa Mokotów Bobrowiecka",
+      "street": "Bobrowiecka",
+      "houseNumber": "8",
+      "phone": "+48880348515",
+      "category": "silownia",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-mokotow-bobrowiecka/",
+      "hours": "Mo-Fr 06:00-23:00; Sa-Su 07:00-22:00",
+      "notes": "Potwierdzono adres, telefon i ofertę siłowni. Zapisano godziny klubu, nie sauny."
+    },
+    {
+      "slug": "osm-node-4293150546",
+      "name": "Zdrofit Warszawa Bielany Arkuszowa",
+      "street": "Arkuszowa",
+      "houseNumber": "18",
+      "phone": "+48535756676",
+      "category": "silownia",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bielany-arkuszowa/",
+      "hours": "Mo-Fr 06:00-23:00; Sa-Su 07:00-22:00",
+      "notes": "Potwierdzono adres, telefon, strefę ciężarów i płatną ofertę."
+    },
+    {
+      "slug": "osm-way-1458571245",
+      "name": "Zdrofit Warszawa Białołęka Mochtyńska",
+      "street": "Mochtyńska",
+      "houseNumber": "75",
+      "phone": "+48604140101",
+      "category": "silownia",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bialoleka-mochtynska/",
+      "hours": "Mo-Fr 06:00-23:00; Sa-Su 07:00-22:00",
+      "notes": "Adres zgodny z OSM. Potwierdzono siłownię i godziny. Punkt pochodzi ze środka obiektu OSM."
+    },
+    {
+      "slug": "osm-node-12149541252",
+      "name": "Zdrofit Warszawa Wola Warsaw Spire",
+      "street": "Plac Europejski",
+      "houseNumber": "1",
+      "phone": "+48882353447",
+      "category": "silownia",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-wola-warsaw-spire/",
+      "hours": "Mo-Fr 06:00-23:00; Sa-Su 07:00-22:00",
+      "notes": "Potwierdzono adres, kontakt, siłownię i godziny klubu."
+    },
+    {
+      "slug": "osm-node-5109221107",
+      "name": "CityFit Warszawa Targówek",
+      "street": "Głębocka",
+      "houseNumber": "13",
+      "postalCode": "03-287",
+      "phone": "+48221285991",
+      "category": "silownia",
+      "sourceUrl": "https://cityfit.pl/silownie/warszawa/targowek",
+      "hours": "24/7",
+      "notes": "Potwierdzono oddział CH Zielony Targówek, nie inny klub na Targówku."
+    },
+    {
+      "slug": "osm-node-13089638155",
+      "name": "CityFit Warszawa PDT Wola",
+      "street": "Młynarska",
+      "houseNumber": "8/12",
+      "postalCode": "01-194",
+      "phone": "+48223759320",
+      "category": "silownia",
+      "sourceUrl": "https://cityfit.pl/silownie/warszawa/wola",
+      "hours": "24/7",
+      "notes": "Potwierdzono oficjalną stronę konkretnego oddziału i jego adres, telefon i godziny."
+    },
+    {
+      "slug": "osm-node-4580685499",
+      "name": "CityFit Warszawa Rondo ONZ",
+      "street": "Twarda",
+      "houseNumber": "18",
+      "postalCode": "00-105",
+      "phone": "+48222026777",
+      "category": "silownia",
+      "sourceUrl": "https://cityfit.pl/silownie/warszawa/rondo-onz",
+      "hours": "24/7",
+      "notes": "Potwierdzono adres oddziału, telefon, siłownię i całodobowe godziny."
+    },
+    {
+      "slug": "osm-node-11177527123",
+      "name": "Just GYM Warszawa Dziekońskiego",
+      "street": "Józefa Piusa Dziekońskiego",
+      "houseNumber": "1",
+      "postalCode": "00-728",
+      "phone": "+48796660740",
+      "category": "silownia",
+      "sourceUrl": "https://justgym.pl/silownie/warszawa/mokotow/dziekonskiego",
+      "hours": "24/7",
+      "notes": "Potwierdzono adres, siłownię i płatne karnety. Godziny oznaczają dostęp do klubu; karty mogą mieć własne ograniczenia."
+    },
+    {
+      "slug": "osm-node-8890564221",
+      "name": "Mokotowski Gym",
+      "street": "Białej Floty",
+      "houseNumber": "2",
+      "postalCode": "02-654",
+      "phone": "+48664099162",
+      "category": "silownia",
+      "sourceUrl": "https://mokotowskigym.com/",
+      "schedule": [
+        {
+          "days": "codziennie — z kluczem",
+          "hours": "całą dobę"
+        },
+        {
+          "days": "recepcja pon–pt",
+          "hours": "16:00–21:30"
+        },
+        {
+          "days": "recepcja sob",
+          "hours": "10:00–15:00"
+        }
+      ],
+      "description": "Siłownia z salą sportów walki. Dostęp całodobowy wymaga odebrania klucza (osobna opłata według cennika klubu). Bez klucza wejście w godzinach recepcji.",
+      "notes": "Rozstrzygnięto konflikt telefonu i godzin z OSM na podstawie oficjalnej strony; nie obiecuje bezwarunkowego wejścia 24/7."
+    },
+    {
+      "slug": "osm-node-13684155501",
+      "name": "Decepticon Gym Marysin",
+      "street": "Goździków",
+      "houseNumber": "29/31",
+      "postalCode": "04-231",
+      "phone": "+48515279906",
+      "category": "silownia",
+      "sourceUrl": "https://decepticongym.pl/kontakt/",
+      "notes": "Potwierdzono Marysin, nie drugi oddział Wesoła. Oferta treningu siłowego/funkcjonalnego na stronie klubu. Godzin z OSM nie potwierdzono, więc ich nie publikujemy."
+    },
+    {
+      "slug": "osm-node-6586519824",
+      "name": "Strefa Formy",
+      "street": "Pola Karolińskie",
+      "houseNumber": "4",
+      "category": "silownia",
+      "sourceUrl": "https://www.strefa-formy.pl/",
+      "hours": "Mo-Fr 06:30-22:30; Sa-Su 08:00-21:00",
+      "notes": "Potwierdzono adres i ofertę maszyn oraz wolnych ciężarów. Telefon na stronie ma błędny zapis prefiksu (+695); nie kopiujemy go bez potwierdzenia."
+    },
+    {
+      "slug": "osm-node-10141472459",
+      "name": "LOOP Fitness Kabaty",
+      "street": "Kabacki Dukt",
+      "houseNumber": "7",
+      "phone": "+48609700665",
+      "category": "fitness",
+      "sourceUrl": "https://loopfitness.pl/kabaty/",
+      "notes": "Potwierdzono adres, telefon i płatny trening obwodowy oraz zajęcia fitness. Podane na stronie godziny trenerów nie są automatycznie godzinami dostępu do klubu."
+    },
+    {
+      "slug": "osm-node-8842592927",
+      "name": "Just GYM Warszawa Rosoła",
+      "street": "Stanisława Rosoła",
+      "houseNumber": "63",
+      "postalCode": "02-796",
+      "phone": "+48730630440",
+      "category": "silownia",
+      "sourceUrl": "https://justgym.pl/silownie/warszawa/ursynow/rosola",
+      "hours": "24/7",
+      "notes": "OSM wskazuje stronę oddziału Rosoła; potwierdzono konkretny adres, kontakt i całodobowy klub z płatnymi karnetami."
+    },
+    {
+      "slug": "osm-node-13524233402",
+      "name": "Body Movement Mokotów",
+      "street": "Czerska",
+      "houseNumber": "12",
+      "postalCode": "00-732",
+      "phone": "+48511315613",
+      "category": "fitness",
+      "sourceUrl": "https://bodymovement.pl/trener-personalny-mokotow/",
+      "hours": "Mo-Fr 05:00-23:30; Sa-Su 05:00-19:00",
+      "description": "Studio treningu personalnego przy Czerskiej 12, budynek X2. Trening po umówieniu z trenerem.",
+      "notes": "Potwierdzono adres, kontakt, trening i regularne godziny. To studio treningu indywidualnego, nie ogólnodostępna siłownia typu open."
+    },
+    {
+      "slug": "osm-node-12198495890",
+      "name": "Active Zone Wola Odolany",
+      "street": "Jana Kazimierza",
+      "houseNumber": "43",
+      "category": "silownia",
+      "sourceUrl": "https://activezone.fit/",
+      "notes": "Oficjalna lista działających oddziałów sieci siłowni i fitness potwierdza Wola Odolany przy Jana Kazimierza 43. Wstrzymano kopiowanie godzin i telefonu bez potwierdzenia dla oddziału."
+    },
+    {
+      "slug": "osm-node-11290632462",
+      "name": "Kamion Fitness Club",
+      "street": "Chodakowska",
+      "houseNumber": "12",
+      "phone": "+48724468548",
+      "category": "silownia",
+      "sourceUrl": "https://www.kamionfit.pl/",
+      "hours": "Mo-Fr 06:30-22:30; Sa-Su 09:00-18:00",
+      "notes": "Potwierdzono adres, telefon, ofertę siłowni, regularny harmonogram i karnety."
+    },
+    {
+      "slug": "osm-node-750715593",
+      "name": "Energy Fitness Warszawa Grochów",
+      "street": "Grochowska",
+      "houseNumber": "170A",
+      "phone": "+48696804679",
+      "category": "silownia",
+      "sourceUrl": "https://www.energyfitness.pl/warszawa-grochow.php",
+      "hours": "Mo-Fr 06:30-22:30; Sa-Su 09:00-17:00",
+      "notes": "Adres zgodny z OSM. Oficjalna strona oddziału potwierdza siłownię, kontakt i regularne godziny."
+    },
+    {
+      "slug": "osm-node-8979094663",
+      "name": "Energy Fitness Warszawa Ursus — dla kobiet",
+      "street": "Stanisława Wojciechowskiego",
+      "houseNumber": "37",
+      "postalCode": "02-495",
+      "phone": "+48664477988",
+      "category": "silownia",
+      "sourceUrl": "https://www.energyfitness.pl/warszawa-ursus.php",
+      "hours": "Mo-Fr 07:00-23:00; Sa-Su 09:00-20:00",
+      "description": "Klub wyłącznie dla kobiet, Galeria Ursus, lokal 48. Siłownia i zajęcia grupowe.",
+      "notes": "OSM wskazuje stronę oddziału. Potwierdzono adres, ofertę i ważne ograniczenie dostępu: tylko dla kobiet."
+    },
+    {
+      "slug": "osm-node-13395970242",
+      "name": "LOOP Fitness Bemowo",
+      "street": "Generała Tadeusza Pełczyńskiego",
+      "houseNumber": "32",
+      "phone": "+48609700105",
+      "category": "fitness",
+      "sourceUrl": "https://loopfitness.pl/mokotow/",
+      "notes": "Mylący URL i tytuł strony, ale treść jednoznacznie wskazuje oddział Bemowo przy Pełczyńskiego 32. Potwierdzono ofertę i telefon. Godziny trenerów nie są godzinami klubu."
+    },
+    {
+      "slug": "osm-node-13724279102",
+      "name": "BE.MORE studio",
+      "street": "Aleja Jerzego Waszyngtona",
+      "houseNumber": "30/36",
+      "postalCode": "03-910",
+      "phone": "+48513596860",
+      "category": "fitness",
+      "sourceUrl": "https://bemorestudio.pl/",
+      "description": "Studio treningu funkcjonalnego. Wejście na tyłach budynku przy al. Waszyngtona 30/36.",
+      "notes": "Potwierdzono pełny adres, kontakt i płatną przestrzeń treningu funkcjonalnego. Nie kopiujemy niepotwierdzonych godzin z OSM."
+    }
+  ],
+  "held": [
+    {
+      "slug": "osm-node-10542113124",
+      "reason": "address_conflict",
+      "sourceUrl": "https://fbodystudio.pl/",
+      "notes": "Adres Przejazd 4/U3 w tekście i danych płatności kontra Przejazd 2/U1 w OSM i podpisie mapy. Sprzeczność także wewnątrz strony; pozostaje szkicem."
+    },
+    {
+      "slug": "osm-way-96107907",
+      "reason": "address_conflict",
+      "sourceUrl": "https://www.crossfitursynow.pl/kontakt/",
+      "notes": "Lachmana 3 na stronie kontra 5A w OSM. Nie potwierdzono położenia nowego adresu."
+    },
+    {
+      "slug": "osm-node-5335200241",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://crossfitelektromoc.pl/",
+      "notes": "Strona nieodczytywalna; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-11114124300",
+      "reason": "duplicate",
+      "canonicalSlug": "osm-node-11114124299",
+      "notes": "Ta sama nazwa 12 m od rekordu z pełnym adresem. Oba wstrzymane do sprawdzenia placówki; niczego nie usuwamy."
+    },
+    {
+      "slug": "osm-way-133654438",
+      "reason": "possible_duplicate",
+      "notes": "New Age Fitness: identyczna nazwa, pełny adres, telefon i strona jak way/133654444, ale odległość przekracza pierwotny próg 50 m."
+    },
+    {
+      "slug": "osm-way-133654444",
+      "reason": "possible_duplicate",
+      "notes": "Drugi budynek oznaczony jako ten sam klub przy Modlińskiej 115; nie publikujemy dwóch wpisów jednego klubu."
+    },
+    {
+      "slug": "osm-node-4031895438",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://www.calypso.com.pl/klub/calypso-warszawa-nowoursynowska/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-11003319653",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://electrogymfit.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-4358647289",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://www.fortfitness.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-8429269005",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://intime.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-11033719167",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://www.ksw-gym.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-3293559111",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://www.mrssporty.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-2827980505",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://www.mrssporty.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-4934585071",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://nolimit.fit/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-9245829647",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://oxygenfitness.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-7427493067",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://studioyourtime.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-4405674590",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-ochota-aleja-bohaterow-wrzesnia/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-8095042423",
+      "reason": "source_unavailable",
+      "sourceUrl": "https://trenujdalej.pl/",
+      "notes": "Próba odczytu strony klubu lub sieci nie pozwoliła potwierdzić danych. Pozostaje szkicem; błąd pobierania nie oznacza zamknięcia."
+    },
+    {
+      "slug": "osm-node-10940551829",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/zdrofit-warszawa-wola-mennica-legacy-tower/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-11259642437",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-wlochy-krakowiakow/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-11818246334",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-ursus-dzieci-warszawy/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-12387862401",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bialoleka-skarbka-z-gor/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-12842606267",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-wola-wolska-88/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-13724795625",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bemowo-lazurowa/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-2092711146",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-targowek-dalanowska/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-3602191796",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-zoliborz-wojska-polskiego/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-4402701961",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bielany-przy-agorze/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-4624893600",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-wola-jana-kazimierza/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-5376784364",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-mokotow-konstruktorska/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-5875436528",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-goclaw-generala-fieldorfa/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-6419761570",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-centrum-krucza/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-6479058072",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-wilanow-aleja-rzeczypospolitej/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-6779462310",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/ursynow-konski-jar/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-7865795714",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-ochota-grojecka/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-8936301206",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-metro-swietokrzyska/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-9008613917",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-centrum-rondo-onz/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-way-115406797",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bialoleka/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-way-1249407654",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-fort-wola/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-way-132674068",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-bialoleka-modlinska/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-way-99232826",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-ursynow-puszczyka/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    },
+    {
+      "slug": "osm-node-11831623516",
+      "reason": "source_access_blocked",
+      "sourceUrl": "https://zdrofit.pl/kluby-fitness/warszawa-adgar-plaza/",
+      "notes": "Próba odczytu oficjalnej strony nie dała danych oddziału (kontrola dostępu/timeout). Nie zastępujemy weryfikacji samym linkiem OSM; to nie dowód zamknięcia."
+    }
+  ]
+}
