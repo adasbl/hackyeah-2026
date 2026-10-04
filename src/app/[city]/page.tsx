@@ -24,7 +24,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const { city } = await params;
   const f = parseSearchParams(await searchParams);
   const what = f.category ? categoryOf(f.category).name : 'Obiekty sportowe';
-  const cards = f.cards.length ? ` z kartą ${f.cards.map(providerName).join(', ')}` : '';
+  const cards = f.cards.length ? ` z kartą ${f.cards.map(providerName).join(' lub ')}` : '';
   const cities = await getCityOptions();
   const name = cities.find((option) => option.slug === city)?.name ?? cityName(city);
   const where = hasLocation(f) && city === ALL_CITIES_SLUG ? 'w pobliżu' : name;
@@ -107,7 +107,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
             </div>
             <p className="mt-2 text-sm text-slate-500" aria-live="polite">
               {total === 0 ? 'Brak wyników' : `${total} ${plural(total, 'obiekt', 'obiekty', 'obiektów')}`}
-              {filters.cards.length > 0 && <> · karty: {filters.cards.map(providerName).join(' + ')}</>}
+              {filters.cards.length > 0 && <> · karty: {filters.cards.map(providerName).join(' lub ')}</>}
               {filters.q && <> · wyszukiwanie: „{filters.q}”</>}
               {filters.open && <> · otwarte teraz</>}
               {located && filters.sort === 'distance' && <> · od najbliższych</>}

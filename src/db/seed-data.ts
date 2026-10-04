@@ -46,7 +46,7 @@ const statuses = ["accepted", "conditional", "not_accepted", "unknown"] as const
 
 function claimsFor(slug: string, index: number): SeedPlace["claims"] {
   return SEED_PROVIDERS.map((provider, providerIndex) => {
-    // Pierwszy obiekt akceptuje wszystkie karty: przykład filtra AND.
+    // Pierwszy obiekt akceptuje wszystkie karty: przykład filtra OR.
     const status = index === 0
       ? "accepted"
       : statuses[(index + providerIndex) % statuses.length];

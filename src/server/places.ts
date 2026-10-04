@@ -89,13 +89,14 @@ export function createPlacesService(database: Database) {
         : textMatch);
     }
 
-    for (const provider of new Set(query.cards ?? [])) {
+    const providers = [...new Set(query.cards ?? [])];
+    if (providers.length) {
       filters.push(exists(database.select({ id: placeCardClaims.id })
         .from(placeCardClaims)
         .innerJoin(cardProviders, eq(cardProviders.id, placeCardClaims.providerId))
         .where(and(
           eq(placeCardClaims.placeId, places.id),
-          eq(cardProviders.slug, provider),
+          inArray(cardProviders.slug, providers),
           inArray(placeCardClaims.status, ['accepted', 'conditional']),
           or(isNull(placeCardClaims.expiresAt), sql`${placeCardClaims.expiresAt} > now()`),
         ))));

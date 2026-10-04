@@ -94,6 +94,7 @@ test('mapa zachowuje filtry publikacji, miasta, kategorii, tekstu, kart i obszar
     assert.match(query.sql, /extensions\.st_intersects/);
     assert.match(query.sql, /extensions\.st_dwithin/);
     assert.match(query.sql, /exists \(select/);
+    assert.equal((query.sql.match(/exists \(select/g) ?? []).length, 1);
     assert.match(query.sql, /"expires_at" > now\(\)/);
     for (const param of [true, 'lodz', 'basen', '%lakowa%', 'multisport', 'beactive', 'accepted', 'conditional', 5000]) {
       assert.ok(query.params.includes(param));

@@ -22,7 +22,7 @@ Frontend pobiera dane z PostgreSQL przez `src/lib/data/places.ts` i serwis `src/
 | `q` | `fala` | nazwa / adres (pg_trgm) |
 | `city` | `warszawa` | slug miasta; `polska` lub brak = cała Polska |
 | `category` | `basen` | slug kategorii |
-| `cards` | `multisport,beactive` | **każda** z kart musi mieć status `accepted` lub `conditional` |
+| `cards` | `multisport,beactive` | **dowolna** z kart musi mieć status `accepted` lub `conditional` |
 | `lat`, `lng`, `radius` | `52.23`, `21.01`, `3000` | punkt odniesienia i promień w metrach (`radius` wymaga `lat`/`lng`) |
 | `open` | `1` | tylko obiekty otwarte teraz (czas Europe/Warsaw) |
 | `sort` | `distance` | `name` (domyślnie) albo `distance` – od najbliższych, wymaga `lat`/`lng` |
