@@ -199,6 +199,8 @@ const NAME_PREFIX: Record<CategorySlug, string[]> = {
   joga: ['Studio Jogi', 'Joga', 'Przestrzeń Jogi'],
   wspinaczka: ['Ścianka', 'Boulder Hall', 'Centrum Wspinaczkowe'],
   squash: ['Squash Club', 'Korty Squash', 'Squash & Fit'],
+  tenis: ['Kort Tenisowy', 'Tenis Club', 'Akademia Tenisa'],
+  taniec: ['Studio Tańca', 'Szkoła Tańca', 'Dance Point'],
 };
 
 const STREETS = ['Sportowa', 'Leśna', 'Ogrodowa', 'Polna', 'Kwiatowa', 'Słoneczna', 'Lipowa', 'Szkolna', 'Parkowa', 'Klonowa', 'Długa', 'Krótka'];
@@ -227,6 +229,8 @@ const CONDITIONS: Record<CategorySlug, string[]> = {
   joga: ['Maks. 4 wejścia w miesiącu.', 'Tylko zajęcia poranne.'],
   wspinaczka: ['Tylko bouldering.', 'Dopłata za wypożyczenie sprzętu.'],
   squash: ['Kort poza godzinami szczytu.', 'Dopłata 15 zł do kortu.'],
+  tenis: ['Kort poza godzinami szczytu.', 'Dopłata za oświetlenie kortu.'],
+  taniec: ['Tylko zajęcia grupowe.', 'Maks. 4 wejścia w miesiącu.'],
 };
 
 const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
@@ -236,6 +240,8 @@ const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
   joga: ['Zajęcia jednorazowe', 35, 60],
   wspinaczka: ['Wejście normalne', 30, 48],
   squash: ['Kort 60 min', 50, 95],
+  tenis: ['Kort 60 min', 40, 90],
+  taniec: ['Zajęcia jednorazowe', 30, 55],
 };
 
 const AMENITIES: Record<CategorySlug, string[]> = {
@@ -245,6 +251,8 @@ const AMENITIES: Record<CategorySlug, string[]> = {
   joga: ['Maty na miejscu', 'Herbata', 'Zajęcia online'],
   wspinaczka: ['Bouldering', 'Wypożyczalnia butów', 'Kawiarnia'],
   squash: ['Wypożyczalnia rakiet', 'Prysznice', 'Bar'],
+  tenis: ['Wypożyczalnia rakiet', 'Szatnia', 'Oświetlenie kortów'],
+  taniec: ['Lustra', 'Szatnia', 'Zajęcia próbne'],
 };
 
 const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
@@ -254,6 +262,8 @@ const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
   joga: [[['pon–pt', '7:00–21:00'], ['sob', '9:00–14:00'], ['niedz', 'zamknięte']], [['pon–sob', '8:00–20:00'], ['niedz', '10:00–14:00']]],
   wspinaczka: [[['pon–pt', '10:00–23:00'], ['sob–niedz', '9:00–22:00']]],
   squash: [[['pon–pt', '7:00–23:00'], ['sob–niedz', '8:00–22:00']], DEFAULT_HOURS],
+  tenis: [[['pon–pt', '8:00–22:00'], ['sob–niedz', '8:00–20:00']]],
+  taniec: [[['pon–pt', '16:00–22:00'], ['sob', '10:00–16:00'], ['niedz', 'zamknięte']]],
 };
 
 function generateSeeds(): Seed[] {

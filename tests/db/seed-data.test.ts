@@ -12,10 +12,10 @@ test("seed zawiera 4 operatorów, 20 miejsc, 15 publikacji i 60 informacji o kar
   assert.equal(SEED_PLACES.filter(({ place }) => place.isPublished).length, 15);
   assert.equal(SEED_PLACES.reduce((count, { claims }) => count + claims.length, 0), 60);
   assert.equal(new Set(SEED_PLACES.map(({ place }) => place.slug)).size, 20);
-  assert.deepEqual(
-    new Set(SEED_PLACES.map(({ place }) => place.category)),
-    new Set(CATEGORY_SLUGS),
-  );
+  // Dane demo obejmują pierwotnych 6 kategorii; nowe (tenis, taniec) pochodzą z danych w bazie.
+  const used = new Set(SEED_PLACES.map(({ place }) => place.category));
+  assert.deepEqual(used, new Set(["silownia", "basen", "fitness", "joga", "wspinaczka", "squash"]));
+  for (const category of used) assert.ok((CATEGORY_SLUGS as readonly string[]).includes(category));
 });
 
 test("każde miejsce jest jawnie fikcyjne i ma poprawny punkt WGS84", () => {

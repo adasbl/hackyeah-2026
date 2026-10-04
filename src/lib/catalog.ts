@@ -23,6 +23,8 @@ export const CATEGORIES: (Category & { gradient: string; soft: string })[] = [
   { slug: 'joga', name: 'Joga', gradient: 'from-emerald-500 to-teal-400', soft: 'bg-emerald-50 text-emerald-600' },
   { slug: 'wspinaczka', name: 'Ścianka wspinaczkowa', gradient: 'from-amber-500 to-yellow-400', soft: 'bg-amber-50 text-amber-600' },
   { slug: 'squash', name: 'Squash', gradient: 'from-indigo-500 to-violet-400', soft: 'bg-indigo-50 text-indigo-600' },
+  { slug: 'tenis', name: 'Tenis', gradient: 'from-lime-500 to-green-400', soft: 'bg-lime-50 text-lime-700' },
+  { slug: 'taniec', name: 'Taniec', gradient: 'from-purple-600 to-pink-400', soft: 'bg-purple-50 text-purple-600' },
 ];
 
 export const CITIES = [
@@ -82,7 +84,9 @@ export const CONFIDENCE_LABEL: Record<Confidence, string> = {
 };
 
 export const providerName = (slug: CardProviderSlug) => CARD_PROVIDERS.find((p) => p.slug === slug)?.name ?? slug;
-export const categoryOf = (slug: CategorySlug) => CATEGORIES.find((c) => c.slug === slug)!;
+/** Nieznana kategoria (np. dodana w bazie przed zmianą kodu) dostaje neutralny wygląd zamiast wywracać stronę. */
+const UNKNOWN_CATEGORY = { slug: 'inne', name: 'Inne', gradient: 'from-slate-500 to-slate-400', soft: 'bg-slate-100 text-slate-600' };
+export const categoryOf = (slug: CategorySlug) => CATEGORIES.find((c) => c.slug === slug) ?? UNKNOWN_CATEGORY;
 
 const PL_CHARS: Record<string, string> = { ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n', ó: 'o', ś: 's', ź: 'z', ż: 'z' };
 
