@@ -11,7 +11,7 @@ export default function Loading() {
           <div className="h-4 w-1/2 max-w-sm animate-pulse rounded bg-slate-200/60" />
         </div>
       </div>
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_18.75rem]">
         <div className="h-96 animate-pulse rounded-3xl bg-white/80 ring-1 ring-slate-200" />
         <div className="space-y-6">
           <div className="h-80 animate-pulse rounded-3xl bg-white/80 ring-1 ring-slate-200" />

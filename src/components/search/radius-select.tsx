@@ -98,7 +98,7 @@ export function RadiusSelect({ value, onChange }: Props) {
           onKeyDown={onListKeyDown}
           className="absolute left-1/2 top-full z-50 mt-2 w-60 -translate-x-1/2 origin-top animate-pop rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.4)] outline-none backdrop-blur-xl"
         >
-          <li className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400" role="presentation">
+          <li className="px-3 pb-1.5 pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-400" role="presentation">
             Promień wyszukiwania
           </li>
           {RADIUS_OPTIONS.map((r, i) => {

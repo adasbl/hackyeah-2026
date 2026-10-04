@@ -113,7 +113,7 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
             {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <SlidersHorizontal className="size-5" aria-hidden />}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold text-ink">{summaryCity}</span>
+            <span className="block truncate text-[0.9375rem] font-semibold text-ink">{summaryCity}</span>
             <span className="block truncate text-sm leading-relaxed text-slate-500">{summaryDetails}</span>
           </span>
           <span className="flex shrink-0 items-center gap-1 pr-1 text-sm font-medium text-brand-600">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { CardStatusBadge } from '@/components/card-status-badge';
+import { CardContributionForm } from '@/components/card-contribution-form';
 import { Backdrop } from '@/components/backdrop';
 import { CategoryBadge } from '@/components/category-icon';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
@@ -78,7 +79,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
 
       {place.description && <p className="mt-4 max-w-2xl text-slate-700">{place.description}</p>}
 
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21.25rem]">
         <section aria-labelledby="cards-h" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 id="cards-h" className="text-lg font-semibold">Karty sportowe</h2>
           <p className="mb-4 text-sm text-slate-500">Status, warunki, źródło i data ostatniej weryfikacji.</p>
@@ -122,7 +123,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
                       <dd>{CONFIDENCE_LABEL[c.confidence]}</dd>
                       {c.verifiedAt && (
                         <>
-                          <dt className="text-slate-500">Zweryfikowano</dt>
+                          <dt className="text-slate-500">{c.sourceType === 'community' ? 'Zgłoszono' : 'Zweryfikowano'}</dt>
                           <dd>{formatDate(c.verifiedAt)}</dd>
                         </>
                       )}
@@ -138,6 +139,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
               );
             })}
           </ul>
+          <CardContributionForm placeSlug={place.slug} cards={place.cards} />
         </section>
 
         <aside className="space-y-6">
@@ -198,7 +200,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
                   <div key={h.days} className="contents">
                     <dt className={isToday ? 'font-semibold text-ink' : 'text-slate-500'}>
                       {h.days}
-                      {isToday && <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">dziś</span>}
+                      {isToday && <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-brand-700">dziś</span>}
                     </dt>
                     <dd className={`tabular-nums ${isToday ? 'font-semibold' : ''}`}>{h.hours}</dd>
                   </div>

@@ -123,3 +123,11 @@ Dane pochodzą z PostgreSQL przez Drizzle. Format danych opisuje [`docs/api-cont
 Mapa grupuje bliskie obiekty w klastry (kółko z liczbą i pierścieniem w kolorach kategorii).
 Na stronie głównej jest porównanie kart: ile opublikowanych obiektów w danym obszarze akceptuje każdą kartę.
 Lista, mapa, ulubione i statystyki korzystają z PostgreSQL przez `src/server/places.ts`.
+
+Na stronie obiektu, w sekcji „Karty sportowe”, formularz „Uzupełnij informacje o kartach”
+pozwala bez logowania dodać lub poprawić status wybranej karty, warunki wejścia i opcjonalny
+link HTTP(S) do źródła. Akceptacja warunkowa wymaga opisu warunków. Zapis aktualizuje
+rekord wybranej karty w `place_card_claims`, oznacza go jako `community` z niską pewnością
+i odświeża cache szczegółów, wyszukiwania oraz statystyk. Ostatnie zgłoszenie zastępuje
+poprzednią informację o tej karcie; formularz jest dostępny tylko dla opublikowanych obiektów.
+Funkcja korzysta z istniejącego schematu bazy i nie wymaga nowej migracji.

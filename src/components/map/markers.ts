@@ -38,7 +38,7 @@ const MARKER_ICONS: Record<CategorySlug, IconNode> = {
 };
 
 /** Dymek nad pinezką: czubek pinezki jest w punkcie, a jej „główka” ~22 px wyżej. */
-export const PIN_POPUP_OFFSET: maplibregl.Offset = {
+const PIN_POPUP_OFFSET = {
   center: [0, -22],
   top: [0, 4],
   'top-left': [0, 4],
@@ -49,6 +49,14 @@ export const PIN_POPUP_OFFSET: maplibregl.Offset = {
   left: [14, -22],
   right: [-14, -22],
 };
+
+/** MapLibre oczekuje pikseli; offset musi odpowiadać pinezce skalowanej w rem. */
+export function getPinPopupOffset(): maplibregl.Offset {
+  const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16;
+  return Object.fromEntries(
+    Object.entries(PIN_POPUP_OFFSET).map(([anchor, [x, y]]) => [anchor, [x * scale, y * scale]]),
+  ) as maplibregl.Offset;
+}
 
 /**
  * Pinezka obiektu: „łezka” w kolorze kategorii z białą ikoną w środku – kształtem odróżnia się od okrągłej
@@ -64,7 +72,7 @@ export function createPin(place: { name: string; category: CategorySlug }, opts:
 
   const body = document.createElement('div');
   body.className = `relative origin-bottom drop-shadow-md transition-[scale] group-hover:scale-115 ${
-    opts.size === 'lg' ? 'h-12 w-[37px]' : 'h-9 w-7'
+    opts.size === 'lg' ? 'h-12 w-[2.3125rem]' : 'h-9 w-7'
   }`;
 
   const NS = 'http://www.w3.org/2000/svg';
@@ -81,7 +89,7 @@ export function createPin(place: { name: string; category: CategorySlug }, opts:
 
   const icon = createIcon(MARKER_ICONS[place.category] ?? Target, {
     class: `absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-white ${
-      opts.size === 'lg' ? 'top-[18px] size-[18px]' : 'top-[13.5px] size-3.5'
+      opts.size === 'lg' ? 'top-[1.125rem] size-[1.125rem]' : 'top-[0.84375rem] size-3.5'
     }`,
     'stroke-width': 2.5,
     'aria-hidden': 'true',
@@ -140,17 +148,17 @@ export function createCluster(count: number, counts: CategoryCounts) {
   const body = document.createElement('div');
   body.className =
     'relative grid place-items-center rounded-full bg-white/95 shadow-[0_8px_24px_-6px_rgba(30,64,175,0.45),0_0_0_6px_rgba(59,108,255,0.14)] transition-[scale,box-shadow] duration-200 group-hover:scale-110 group-hover:shadow-[0_10px_28px_-6px_rgba(30,64,175,0.55),0_0_0_9px_rgba(59,108,255,0.18)] group-focus-visible:scale-110';
-  body.style.width = body.style.height = `${size}px`;
+  body.style.width = body.style.height = `${size / 16}rem`;
 
   const ringEl = document.createElement('div');
-  ringEl.className = 'absolute inset-[3px] rounded-full';
+  ringEl.className = 'absolute inset-[0.1875rem] rounded-full';
   ringEl.style.background = ring;
   // Maska zostawia tylko pierścień (5 px) – środek zostaje biały.
-  ringEl.style.mask = ringEl.style.webkitMask = 'radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4.5px))';
+  ringEl.style.mask = ringEl.style.webkitMask = 'radial-gradient(farthest-side, transparent calc(100% - 0.3125rem), #000 calc(100% - 0.28125rem))';
 
   const label = document.createElement('span');
   label.className = 'relative font-semibold tabular-nums tracking-tight text-ink';
-  label.style.fontSize = `${count >= 100 ? 13 : count >= 10 ? 14 : 15}px`;
+  label.style.fontSize = `${(count >= 100 ? 13 : count >= 10 ? 14 : 15) / 16}rem`;
   label.textContent = count >= 1000 ? `${Math.floor(count / 100) / 10}k` : String(count);
 
   body.append(ringEl, label);

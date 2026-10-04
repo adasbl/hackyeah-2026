@@ -16,7 +16,7 @@ export function FavoritesLink() {
       <Heart className={`size-4 ${count ? 'fill-rose-500 text-rose-500' : ''}`} aria-hidden />
       <span className="hidden sm:inline">Ulubione</span>
       {count > 0 && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1.5 text-[11px] font-semibold tabular-nums text-white" aria-hidden>
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1.5 text-[0.6875rem] font-semibold tabular-nums text-white" aria-hidden>
           {count}
         </span>
       )}

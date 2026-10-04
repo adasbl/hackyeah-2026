@@ -109,7 +109,7 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
             maxLength={100}
             autoComplete="off"
             spellCheck={false}
-            className="w-full truncate bg-transparent focus-visible:outline-none text-[15px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-slate-400"
+            className="w-full truncate bg-transparent focus-visible:outline-none text-[0.9375rem] font-medium text-ink outline-none placeholder:font-normal placeholder:text-slate-400"
           />
         </span>
       </label>

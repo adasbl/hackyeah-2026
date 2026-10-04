@@ -56,7 +56,7 @@ export function CategorySelect({ value, onChange }: { value: CategorySlug | ''; 
           <CategoryGlyph category={current.slug || undefined} />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[15px] font-medium leading-snug text-ink">{current.name}</span>
+          <span className="text-[0.9375rem] font-medium leading-snug text-ink">{current.name}</span>
         </span>
         <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden />
       </button>

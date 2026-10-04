@@ -47,7 +47,7 @@ export function FavoriteButton({ slug, name, variant = 'icon', className = '' }:
         on ? 'bg-rose-50 text-rose-500 hover:bg-rose-100' : 'bg-white/80 text-slate-400 hover:bg-slate-100 hover:text-rose-500'
       } ${className}`}
     >
-      <Heart className={`size-[18px] ${on ? 'fill-rose-500 animate-pop' : ''}`} aria-hidden />
+      <Heart className={`size-[1.125rem] ${on ? 'fill-rose-500 animate-pop' : ''}`} aria-hidden />
     </button>
   );
 }

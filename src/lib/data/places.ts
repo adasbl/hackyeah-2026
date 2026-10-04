@@ -12,7 +12,7 @@ type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
 type MapQuery = Filterable & { limit?: number };
 
 /**
- * Wyniki trzymamy w Data Cache Next.js przez minutę: dane zmieniają się tylko przy imporcie,
+ * Wyniki trzymamy w Data Cache Next.js przez minutę. Zapis zgłoszenia społeczności unieważnia cache,
  * a strona nie musi za każdym razem czekać na bazę. Po tym czasie pierwsze żądanie dostaje jeszcze
  * zapamiętany wynik, a świeży pobiera się w tle (stale-while-revalidate).
  * Aby od razu pokazać nowy import, wystarczy revalidateTag(PLACES_CACHE_TAG) albo nowy deployment.

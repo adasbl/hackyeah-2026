@@ -26,7 +26,7 @@ import {
   createPin,
   createUserDot,
   MAP_STYLE_URL,
-  PIN_POPUP_OFFSET,
+  getPinPopupOffset,
   type CategoryCounts,
 } from './markers';
 
@@ -77,7 +77,7 @@ function toGeoJson(places: MapPlace[]): GeoJSON.FeatureCollection<GeoJSON.Point,
   };
 }
 
-export const MAP_HEIGHT = 'h-[68dvh] min-h-[420px] sm:h-[72dvh] sm:max-h-[820px]';
+export const MAP_HEIGHT = 'h-[68dvh] min-h-[26.25rem] sm:h-[72dvh] sm:max-h-[51.25rem]';
 
 /**
  * Uruchamia z wyprzedzeniem workery MapLibre (wspólne dla wszystkich map na stronie).
@@ -238,7 +238,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
         const marker = new maplibregl.Marker({ element: createPin(place), anchor: 'bottom' })
           .setLngLat([fx, fy])
           .setPopup(
-            new maplibregl.Popup({ offset: PIN_POPUP_OFFSET, closeButton: false, maxWidth: '260px' }).setDOMContent(
+            new maplibregl.Popup({ offset: getPinPopupOffset(), closeButton: false, maxWidth: '16.25rem' }).setDOMContent(
               createPopup(place, routerRef),
             ),
           )
@@ -445,7 +445,7 @@ function createPopup(place: PointProps, routerRef: React.RefObject<ReturnType<ty
   root.className = 'font-sans';
 
   const category = document.createElement('p');
-  category.className = 'text-[10px] font-semibold uppercase tracking-wider text-slate-500';
+  category.className = 'text-[0.625rem] font-semibold uppercase tracking-wider text-slate-500';
   category.textContent = categoryOf(place.category).name;
 
   const href = `/places/${place.slug}`;
