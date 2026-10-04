@@ -7,6 +7,7 @@ import postgres from 'postgres';
 import * as schema from '../../src/db/schema';
 import { createPlacesService } from '../../src/server/places';
 import { slugify } from '../../src/lib/catalog';
+import { toMapPlace } from '../../src/lib/geo';
 
 // Tylko SELECT: bez seeda, migracji ani zmian danych na Supabase.
 test('Supabase: publiczne wyszukiwanie, szczegóły, karty, miasta i PostGIS', {
@@ -25,6 +26,9 @@ test('Supabase: publiczne wyszukiwanie, szczegóły, karty, miasta i PostGIS', {
     const results = await service.searchPlaces({ limit: 2 });
     assert.equal(results.total, totals.total);
     assert.ok(results.items.length <= 2);
+    const map = await service.searchMapPoints({ limit: 2 });
+    assert.equal(map.total, results.total);
+    assert.deepEqual(map.items, results.items.map(toMapPlace));
     const cities = await service.getCityOptions();
     assert.equal(cities[0].count, totals.total);
     assert.equal(await service.getPlaceBySlug('nonexistent-integration-test-slug'), null);
@@ -48,6 +52,9 @@ test('Supabase: publiczne wyszukiwanie, szczegóły, karty, miasta i PostGIS', {
       const { lat, lng } = first.location;
       const byBox = await service.searchPlaces({ bbox: [lng - 0.001, lat - 0.001, lng + 0.001, lat + 0.001], limit: 100 });
       assert.ok(byBox.items.some((item) => item.id === first.id));
+      const mapByBox = await service.searchMapPoints({ bbox: [lng - 0.001, lat - 0.001, lng + 0.001, lat + 0.001], limit: 100 });
+      assert.equal(mapByBox.total, byBox.total);
+      assert.deepEqual(mapByBox.items, byBox.items.map(toMapPlace));
       const nearby = await service.searchPlaces({ lat, lng, radius: 100, limit: 100 });
       assert.ok(nearby.items.some((item) => item.id === first.id));
       console.log(JSON.stringify({ publishedPlaces: totals.total, cities: cities.length - 1, details: 'ok', postgis: 'ok' }));

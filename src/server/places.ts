@@ -3,7 +3,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { CARD_PROVIDER_SLUGS, type CardStatsResponse, type GeoPoint, type PlaceDetails, type PlaceSummary, type PlacesQuery, type PlacesResponse } from '@repo/types';
 import * as schema from '@/db/schema';
 import { ALL_CITIES_LABEL, ALL_CITIES_SLUG, slugify } from '@/lib/catalog';
-import { distanceMeters, MAP_LIMIT } from '@/lib/geo';
+import { distanceMeters, MAP_LIMIT, type MapPlacesResult } from '@/lib/geo';
 import { isOpenNow } from '@/lib/opening-hours';
 import { toPlaceDetails, type ClaimRow } from './place-mapper';
 
@@ -129,9 +129,42 @@ export function createPlacesService(database: Database) {
     return search(query, 100, 20);
   }
 
-  async function searchMapPoints(query: Filterable & { limit?: number }) {
-    const { items, total } = await search({ ...query, sort: 'name' }, MAP_LIMIT, MAP_LIMIT);
-    return { items, total };
+  async function searchMapPoints(query: Filterable & { limit?: number }): Promise<MapPlacesResult> {
+    const limit = boundedInteger(query.limit, MAP_LIMIT, 1, MAP_LIMIT);
+    const where = buildWhere(query);
+    // Pinezki nie potrzebują szczegółów obiektu ani potwierdzeń kart.
+    // Filtry kart nadal działają przez EXISTS w buildWhere.
+    const selection = database.select({
+      id: places.id, slug: places.slug, name: places.name, category: places.category,
+      addressStreet: places.addressStreet, addressHouseNumber: places.addressHouseNumber,
+      city: places.city, location: places.location,
+      ...(query.openNow ? { openingHours: places.openingHours } : {}),
+    }).from(places).where(where).orderBy(asc(places.name), asc(places.id));
+    let rows: Awaited<typeof selection>;
+    let total: number;
+    if (query.openNow) {
+      // Godziny sprawdzamy przed limitem, aby licznik obejmował wszystkie otwarte obiekty.
+      const now = new Date();
+      const opened = (await selection).filter((row) => isOpenNow(row.openingHours ?? [], now));
+      total = opened.length;
+      rows = opened.slice(0, limit);
+    } else {
+      const [points, totals] = await Promise.all([
+        selection.limit(limit),
+        database.select({ total: count() }).from(places).where(where),
+      ]);
+      rows = points;
+      total = totals[0].total;
+    }
+    return {
+      items: rows.map((row) => ({
+        id: row.id, slug: row.slug, name: row.name, category: row.category,
+        street: [row.addressStreet, row.addressHouseNumber].filter(Boolean).join(' '),
+        city: row.city ?? '',
+        location: { lat: row.location.y, lng: row.location.x },
+      })),
+      total,
+    };
   }
 
   async function getPlacesBySlugs(slugs: string[]): Promise<PlaceSummary[]> {

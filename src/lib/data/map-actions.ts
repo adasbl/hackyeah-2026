@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { CARD_PROVIDER_SLUGS, CATEGORY_SLUGS } from '@repo/types';
 import { searchMapPoints } from '@/lib/data/places';
-import { MAP_LIMIT, toMapPlace, type MapPlacesResult } from '@/lib/geo';
+import { MAP_LIMIT, type MapPlacesResult } from '@/lib/geo';
 
 const lng = z.number().min(-180).max(180);
 const lat = z.number().min(-90).max(90);
@@ -30,6 +30,5 @@ export async function getMapPlaces(input: MapPlacesInput): Promise<MapPlacesResu
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) throw new Error('Nieprawidłowe parametry mapy');
 
-  const { items, total } = await searchMapPoints({ ...parsed.data, limit: MAP_LIMIT });
-  return { items: items.map(toMapPlace), total };
+  return searchMapPoints({ ...parsed.data, limit: MAP_LIMIT });
 }

@@ -1,6 +1,7 @@
 /** Warstwa dostępu do danych dla frontendu, korzystająca z bazy. */
 import 'server-only';
 import { connection } from 'next/server';
+import { cache } from 'react';
 import type { PlacesQuery } from '@repo/types';
 import { createPlacesService } from '@/server/places';
 
@@ -27,9 +28,10 @@ export async function getPlaceBySlug(slug: string) {
   return (await getService()).getPlaceBySlug(slug);
 }
 
-export async function getCityOptions() {
+// Metadane i strona korzystają z tego samego odczytu w obrębie jednego renderowania.
+export const getCityOptions = cache(async () => {
   return (await getService()).getCityOptions();
-}
+});
 
 type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
 

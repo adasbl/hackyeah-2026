@@ -9,7 +9,7 @@ import { FilterChips, SortToggle, ViewToggle } from '@/components/search/results
 import { SearchForm } from '@/components/search-form';
 import { ALL_CITIES_SLUG, categoryOf, cityLocative, cityName, providerName } from '@/lib/catalog';
 import { getCityOptions, searchMapPoints, searchPlaces } from '@/lib/data/places';
-import { formatDistance, MAP_LIMIT, toMapPlace } from '@/lib/geo';
+import { formatDistance, MAP_LIMIT } from '@/lib/geo';
 import { buildSearchUrl, hasLocation, PAGE_SIZE, parseSearchParams, RADIUS_OPTIONS } from '@/lib/search-params';
 
 type Props = {
@@ -36,6 +36,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   if (!CITY_SLUG.test(city)) notFound();
 
   const filters = parseSearchParams(await searchParams);
+  const isList = filters.view === 'list';
   const located = hasLocation(filters);
   const baseQuery = {
     city,
@@ -47,12 +48,17 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
     lng: filters.lng,
     radius: filters.radius,
   };
-  const [{ items, total }, mapResults, cityOptions] = await Promise.all([
-    searchPlaces({ ...baseQuery, sort: filters.sort, limit: PAGE_SIZE, offset: (filters.page - 1) * PAGE_SIZE }),
+  const [listResults, mapResults, cityOptions] = await Promise.all([
+    isList
+      ? searchPlaces({ ...baseQuery, sort: filters.sort, limit: PAGE_SIZE, offset: (filters.page - 1) * PAGE_SIZE })
+      : Promise.resolve({ items: [], total: 0 }),
     // Mapa pokazuje wszystkie wyniki (do MAP_LIMIT, grupowane w klastry), nie tylko bieżącą stronę listy.
     filters.view === 'map' ? searchMapPoints({ ...baseQuery, limit: MAP_LIMIT }) : Promise.resolve({ items: [], total: 0 }),
     getCityOptions(),
   ]);
+  const { items } = listResults;
+  const total = isList ? listResults.total : mapResults.total;
+  const hasResults = (isList ? items : mapResults.items).length > 0;
   const mapFilters = {
     category: filters.category,
     cards: filters.cards,
@@ -69,7 +75,6 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   const pageLink = (page: number) => buildSearchUrl(city, { ...filters, page });
 
   const nearby = located && filters.radius;
-  const isList = filters.view === 'list';
   // „Obiekty sportowe w całej Polsce”, „Basen w Warszawie”, „Obiekty sportowe w promieniu 5 km”
   const placeLabel = nearby ? `w promieniu ${formatDistance(filters.radius!)}` : cityLocative(city, name);
   const nextRadius = filters.radius ? RADIUS_OPTIONS.find((r) => r > filters.radius!) : undefined;
@@ -119,14 +124,14 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
         </div>
 
         {/* Lista: filtry + sortowanie nad wynikami. Mapa: filtry leżą na samej mapie, a sortowanie nie ma sensu. */}
-        {(isList || items.length === 0) && (
+        {(isList || !hasResults) && (
           <div className="relative z-10 mb-5 flex flex-wrap items-start justify-between gap-3">
             <FilterChips city={city} filters={filters} />
             {isList && items.length > 0 && <SortToggle city={city} filters={filters} />}
           </div>
         )}
 
-        {items.length === 0 ? (
+        {!hasResults ? (
           <div className="animate-fade-up rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center backdrop-blur">
             <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
               <SearchX className="size-7" aria-hidden />
@@ -175,7 +180,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           <div className="animate-fade-up">
             <PlacesMapLazy
               key={mapKey}
-              initialPlaces={mapResults.items.map(toMapPlace)}
+              initialPlaces={mapResults.items}
               initialTotal={mapResults.total}
               filters={mapFilters}
               overlay={<FilterChips city={city} filters={filters} variant="overlay" />}
