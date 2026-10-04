@@ -69,6 +69,17 @@ Dokumentacja: [połączenia Supabase](https://supabase.com/docs/guides/database/
 [PostGIS](https://supabase.com/docs/guides/database/extensions/postgis),
 [Vercel z Git](https://vercel.com/docs/git),
 [MapLibre](https://maplibre.org/maplibre-gl-js/docs/).
+
+## Deklaracje kart na publicznych stronach obiektów
+
+`npm run db:scan:cards -- --dry-run` przygotowuje plan odczytu URL-i z bazy.
+`npm run db:scan:cards -- --crawl` automatycznie ocenia robots.txt oraz publiczne warunki/licencje
+źródeł, a po dopuszczeniu źródła sprawdza deklaracje kart. Domyślny tryb ograniczonych faktów
+nie wymaga jawnej licencji i nie publikuje cytatów; `--strict-sources` przywraca taki wymóg.
+Skrypt respektuje robots.txt, limity oraz blokady. `--crawl` zapisuje jednoznaczne
+statusy bezpośrednio do `place_card_claims`, ze źródłem, warunkami i datą wygaśnięcia.
+`--report-only` pozwala wykonać odczyt HTTP bez zmian w bazie.
+Instrukcja i format rejestru: [skanowanie stron](docs/card-website-scanning.md).
 # fit-pass-finder
 chat goes brrr...
 
