@@ -94,3 +94,8 @@ body:has([data-results-view="map"]) > footer {
 .maplibregl-pseudo-fullscreen .fullscreen-map-filters {
   display: block;
 }
+
+/* Klastry mają z-index: 2, więc dymek musi leżeć nad ich znacznikami. */
+.maplibregl-map .maplibregl-popup {
+  z-index: 3;
+}
