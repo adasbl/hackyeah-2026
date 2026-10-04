@@ -2,6 +2,7 @@ import type { CategorySlug } from '@repo/types';
 import type { places } from './schema';
 import { slugify } from '../lib/catalog';
 import { cleanText, normalizePhone, normalizeWebsite, parseOpeningHours } from './osm-publication';
+import { normalizePolishPostcode } from './osm-postcode-format';
 
 export const POLAND_IMPORT_CATEGORIES = ['silownia', 'basen', 'fitness', 'wspinaczka', 'tenis', 'squash', 'taniec'] as const;
 export type ImportCategory = typeof POLAND_IMPORT_CATEGORIES[number];
@@ -78,7 +79,7 @@ export function normalizePolandPlace(entity: PbfEntity, point: Point, category: 
     description: text('description:pl') ?? text('description'), category,
     addressStreet: text('addr:street'), addressHouseNumber: text('addr:housenumber'),
     addressFloor: text('addr:floor'), level: text('level'),
-    postalCode: /^\d{2}-\d{3}$/.test(tags['addr:postcode'] ?? '') ? tags['addr:postcode'] : null,
+    postalCode: tags['addr:country'] && tags['addr:country'].toUpperCase() !== 'PL' ? null : normalizePolishPostcode(tags['addr:postcode']),
     city, citySlug: city ? slugify(city) : null, location: point,
     openingHoursRaw: text('opening_hours'), openingHours: parseOpeningHours(text('opening_hours')).entries,
     website: normalizeWebsite(text('website') ?? text('contact:website')),

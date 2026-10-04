@@ -10,13 +10,15 @@
     "typecheck": "tsc --noEmit",
     "db:import:osm:warsaw": "tsx src/db/import-osm-warsaw.ts",
     "db:import:osm:poland": "tsx src/db/import-osm-poland.ts",
+    "db:fill:osm:cities": "tsx src/db/fill-osm-cities.ts",
+    "db:fill:osm:postcodes": "tsx src/db/fill-osm-postcodes.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:prepare:osm:warsaw": "tsx src/db/prepare-osm-publication.ts",
     "db:publish:osm:warsaw": "tsx src/db/publish-osm-warsaw.ts",
     "db:seed": "tsx src/db/seed.ts",
     "db:remove:demo": "tsx src/db/remove-demo.ts",
-    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/osm-warsaw.test.ts tests/db/osm-publication.test.ts tests/db/osm-poland.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts",
+    "db:test": "tsx --test tests/db/geo-point.test.ts tests/db/osm-warsaw.test.ts tests/db/osm-publication.test.ts tests/db/osm-poland.test.ts tests/db/osm-localities.test.ts tests/db/osm-postcodes.test.ts tests/db/seed-data.test.ts tests/db/seed.integration.test.ts tests/server/*.test.ts",
     "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {

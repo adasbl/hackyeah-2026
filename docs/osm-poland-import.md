@@ -97,7 +97,7 @@ Nowe przygotowanie tworzy datowaną kopię i zastępuje bieżący cache.
   `outdoor=yes` lub `location=outdoor`), dostęp `private/no`, nieczynne/planowane obiekty,
   sklepy, naturalne miejsca wspinaczkowe i inne obiekty niebędące obiektami sportowymi.
 - Miejscowość pochodzi z `addr:city`, `addr:town` lub `addr:village`; brak pozostaje `null`.
-  Importer nie wykonuje geokodowania ani dopasowania do granic administracyjnych.
+  Po imporcie można uzupełnić brakujące miejscowości osobnym poleceniem opisanym poniżej.
 - Nodes zachowują współrzędne. Ways i relacje dostają środek prostokąta ograniczającego
   ich pełną geometrię: punkt przybliżony, nie pomiar wejścia ani centroid powierzchni.
   Brak członka/węzła, cykl relacji lub głębokość ponad 16 powoduje pominięcie obiektu.
@@ -115,3 +115,136 @@ Dokumentacja źródłowa: [parser PBF](https://github.com/borisgontar/osm-pbf-pa
 [wspinaczka](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dclimbing),
 [padel](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dpadel).
 W aplikacji należy zachować atrybucję © OpenStreetMap contributors i odniesienie do ODbL.
+
+## Uzupełnianie miejscowości na podstawie współrzędnych
+
+`db:fill:osm:cities` dopasowuje istniejące, opublikowane obiekty OSM do pełnych granic
+miejscowości z lokalnego pliku Polski. Nie korzysta z zewnętrznego API, Nominatim ani Overpass.
+Nie wymaga migracji bazy ani ponownego importu obiektów.
+
+```powershell
+# Przygotowanie granic offline, bez połączenia z bazą:
+npm run db:fill:osm:cities -- --file .local/osm/poland-261002.osm.pbf --prepare-only
+
+# Plan dopasowania do aktualnych współrzędnych z bazy, bez UPDATE:
+npm run db:fill:osm:cities -- --from-cache --dry-run
+
+# Uzupełnienie miejscowości i slugów:
+npm run db:fill:osm:cities -- --from-cache --apply
+```
+
+Można także przygotować granice i zapisać zmiany jednym poleceniem z `--file ... --apply`.
+Domyślnie bez `--apply` skrypt pokazuje wyłącznie plan. `--prepare-only` nie wymaga zmiennych
+środowiskowych; pozostałe tryby czytają `DATABASE_MIGRATION_URL` z `.env.local`.
+
+Zasady dopasowania:
+
+- W Polsce `boundary=administrative` + `admin_level=8` oznacza miejscowość (miasto lub wieś).
+  Gminy (7), dzielnice (9), części miejscowości (10) i same punkty `place=*` nie służą do przypisania miasta.
+  Źródło: [poziomy administracyjne OSM w Polsce](https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Aadmin_level).
+- Testowany jest punkt w poligonie, nie sam prostokąt ograniczający ani odległość od centrum.
+  Obsługiwane są wieloczęściowe obszary, wyspy, dziury, odwrócone odcinki i zagnieżdżone relacje.
+  Niepełne i niezamknięte granice oraz cykle relacji są pomijane.
+- Obiekty poza dostępnymi granicami, na krawędzi lub w nakładających się granicach różnych
+  miejscowości pozostają bez przypisania. Nie ma heurystyki „najbliższe miasto”.
+- Istniejące nazwy miejscowości nie są nadpisywane. Brakujący `city_slug` jest wyliczany z istniejącej
+  nazwy. Jeżeli jest slug bez nazwy, rekord jest pomijany, aby zachować możliwą ręczną poprawkę.
+- Aktualizowane są wyłącznie `city`, `city_slug` i `updated_at`; współrzędne, źródłowe tagi,
+  adres uliczny, publikacja i informacje o kartach nie są zmieniane.
+- Granice i wynik odnoszą się do daty snapshotu PBF. Dla ways i relacji obiektów sportowych
+  wykorzystywany jest ich zapisany punkt przybliżony; nie potwierdza to adresu wejścia.
+
+Cache `.local/osm/cities/polska-localities.json` zawiera hash PBF i granic oraz listę pominiętych
+granic. Jest niezależny od `.local/osm/polska-sport.json` — uzupełnienie bazy nie modyfikuje
+oryginalnej paczki importu. Zmiana PBF między przejściami i uszkodzenie cache są wykrywane.
+
+Przed pierwszym UPDATE powstaje kopia `.local/osm/cities/before-*.json` z pełnymi zmienianymi
+rekordami. Zapis odbywa się w jednej transakcji; przed COMMIT skrypt sprawdza zachowanie innych
+pól i istniejących rekordów. Raport `.local/osm/cities/result-*.json` zawiera poprzednie i nowe
+wartości oraz tożsamość granicy OSM dla każdego dopasowania. Ponowienie nie nadpisuje miast.
+
+Nie uruchamiaj seeda, aby uzupełnić miasta lub karty — seed zawiera obiekty demonstracyjne.
+
+### Wynik uruchomienia 4 października 2026
+
+Z pliku `poland-261002.osm.pbf` przygotowano 26 615 poprawnych granic miejscowości;
+595 kandydatów pominięto z powodu geometrii. W bazie z 11 214 opublikowanymi obiektami OSM:
+
+- uzupełniono `city` i `city_slug` w 8 617 rekordach;
+- zachowano 1 626 istniejących, kompletnych przypisań;
+- pozostawiono 971 braków: 966 poza dostępnymi granicami i 5 niejednoznacznych dopasowań;
+- ponowny `--dry-run` wykazał 0 planowanych zmian;
+- odczytowa weryfikacja serwisu aplikacji wykazała 2 024 opcje miejscowości oraz poprawne
+  wyszukiwanie, szczegóły i zapytania PostGIS.
+
+Raport zapisu: `.local/osm/cities/result-2026-10-04T01-28-42-197Z.json`.
+Kopia sprzed aktualizacji: `.local/osm/cities/before-2026-10-04T01-28-42-197Z.json`.
+Raporty zawierają także identyfikatory nierozwiązanych obiektów i przyczyny pominięcia.
+
+## Automatyczne uzupełnianie kodów pocztowych
+
+`db:fill:osm:postcodes` uzupełnia wyłącznie puste `postal_code` w opublikowanych obiektach OSM.
+Nie przypisuje kodu na podstawie nazwy miasta ani najbliższego adresu. Źródłem jest lokalny PBF,
+a nie płatne API czy katalog poczty. Dane są dopasowaniem z OSM, nie urzędowym potwierdzeniem adresu.
+
+```powershell
+# Odczyt współrzędnych z bazy i przygotowanie cache, bez UPDATE:
+npm run db:fill:osm:postcodes -- --file .local/osm/poland-261002.osm.pbf --prepare-only
+
+# Plan bez zapisu:
+npm run db:fill:osm:postcodes -- --from-cache --dry-run
+
+# Uzupełnienie brakujących kodów:
+npm run db:fill:osm:postcodes -- --from-cache --apply
+```
+
+Przygotowanie też wymaga `DATABASE_MIGRATION_URL` w `.env.local`: używa aktualnych współrzędnych
+obiektów bez kodów. Można połączyć przygotowanie i zapis przez `--file ... --apply`.
+Bez `--apply` nie ma aktualizacji bazy. Nie trzeba stosować migracji.
+
+Reguły:
+
+1. Bezpośredni `addr:postcode` na samym obiekcie ma pierwszeństwo. Dopuszczalne są `NN-NNN`
+   i jednoznaczny zapis pięciu cyfr, normalizowany do `NN-NNN`. Nowy import Polski również
+   normalizuje ten zapis. Listy i zakresy kodów nie są zamieniane na pojedynczy kod.
+2. Punkt adresowy z kodem może być dopasowany tylko do identycznej ulicy i numeru domu,
+   maksymalnie 150 m od obiektu. Jeżeli oba źródła podają miejscowość, musi się ona zgadzać.
+   Numer `1/2` nie jest utożsamiany z `1-2`.
+3. Obiekt może dziedziczyć kod z poligonu adresowego zawierającego jego punkt
+   (np. budynku z `addr:postcode`) lub jawnego obszaru `boundary=postal_code` + `postal_code`.
+   Obsługiwane są również granice administracyjne z jednym wyraźnie wskazanym `postal_code`.
+   Źródło tagowania: [OSM postal_code](https://wiki.openstreetmap.org/wiki/Key%3Apostal_code).
+4. Sprzeczne kody z adresu i obszarów, punkty na krawędzi oraz brak odpowiedniego źródła
+   powodują pozostawienie pustego pola. `postal_code` urzędu pocztowego ani pobliski budynek
+   nie są traktowane jako kod obiektu. Jawne adresy spoza Polski są pomijane.
+5. Istniejące niepuste kody, także wymagające ręcznej korekty formatu, są zachowywane.
+   Skrypt aktualizuje tylko `postal_code` i `updated_at`, sprawdzając przed COMMIT inne pola.
+   Nie zmienia miast, ulic, współrzędnych, publikacji ani kart.
+
+Przybliżony punkt ways/relacji może znajdować się poza właściwym budynkiem lub na jego krawędzi.
+Taki obiekt może pozostać bez kodu. Nie tworzymy sztucznych stref z punktów adresowych.
+
+Miliony obszarów adresowych są przetwarzane strumieniowo przez plik tymczasowy i tablice numeryczne.
+Cache `.local/osm/postcodes/polska-postcodes.json` zawiera tylko obszary i punkty istotne dla targetów,
+hash źródłowego PBF, hash danych oraz współrzędne targetów. Plik tymczasowy jest usuwany po zakończeniu.
+Jeżeli obiekt jest nowy lub przesunięty, trzeba ponowić przygotowanie, aby korzystać z dopasowania
+przestrzennego. Bezpośredni tag obiektu nie wymaga geometrii otoczenia.
+
+Przed zapisem powstaje kopia `.local/osm/postcodes/before-*.json`. Raport `result-*.json` zawiera
+stare i nowe wartości, źródłowe ID OSM i listę nierozwiązanych obiektów. Ponowienie nie nadpisuje kodów.
+Po kolejnych importach uruchom przygotowanie i `--apply`; skrypt obsługuje to bez ręcznego przeglądania
+każdego rekordu, a przypadki niejednoznaczne pozostawia bez zmian.
+
+### Wynik uzupełnienia kodów 4 października 2026
+
+Przetworzono 4 871 532 proste obszary adresowe z 33 782 256 unikalnymi węzłami oraz
+złożone poligony i granice pocztowe. Cache dla aktualnych targetów zawiera 1 563 obszary
+i 37 395 pobliskich punktów adresowych.
+
+Z 9 908 rekordów bez kodu uzupełniono 2 167, zachowując 1 306 istniejących kodów.
+Łącznie 3 473 obiekty mają kod; 7 741 pozostało bez kodu: 7 712 bez źródła,
+19 ze sprzecznymi kodami, 5 na krawędzi i 5 z jawnym adresem spoza Polski.
+Ponowny `--dry-run` wykazał 0 planowanych zmian. Testy i odczytowy test serwisu aplikacji przeszły.
+
+Raport zapisu: `.local/osm/postcodes/result-2026-10-04T02-17-38-733Z.json`.
+Kopia sprzed zapisu: `.local/osm/postcodes/before-2026-10-04T02-17-38-733Z.json`.
