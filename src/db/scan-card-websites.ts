@@ -9,11 +9,12 @@ import { CardCrawler } from '../server/card-crawler/crawl';
 import { saveCardClaims } from './save-card-claims';
 import { crawlPolicySchema } from '../server/card-crawler/policy';
 import * as schema from './schema';
+import { scanByHost } from '../server/card-crawler/schedule';
 
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('npm run db:scan:cards -- [--policy <plik.json>] [--dry-run | --crawl] [--report-only] [--strict-sources | --manual-sources-only] [--city <slug>] [--limit <liczba>]\n'
+    console.log('npm run db:scan:cards -- [--policy <plik.json>] [--dry-run | --crawl] [--report-only] [--strict-sources | --manual-sources-only] [--city <slug>] [--limit <liczba>] [--concurrency <1-16>]\n'
       + 'Domyślnie: plan bez HTTP i zapisów. --crawl automatycznie zapisuje jednoznaczne statusy kart.\n'
       + 'Źródła spoza rejestru: automatyczna ocena robots.txt i publicznych warunków/licencji. Niejasne źródła są pomijane.\n'
       + 'Domyślnie dopuszcza ograniczony odczyt faktów bez publikowania cytatów. --strict-sources przywraca wymóg jawnego uprawnienia.\n'
@@ -22,15 +23,17 @@ async function main() {
   }
   let policyFile = 'docs/card-crawler-policy.example.json';
   let city: string | undefined, limit: number | undefined;
+  let concurrency = 8;
   const flags = new Set<string>();
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
-    if (['--policy', '--city', '--limit'].includes(arg)) {
+    if (['--policy', '--city', '--limit', '--concurrency'].includes(arg)) {
       const value = args[++index];
       if (!value || value.startsWith('--')) throw new Error('MISSING_ARGUMENT');
       if (arg === '--policy') policyFile = value;
       if (arg === '--city') city = z.string().regex(/^[a-z0-9-]+$/).parse(value);
       if (arg === '--limit') limit = z.coerce.number().int().positive().max(100_000).parse(value);
+      if (arg === '--concurrency') concurrency = z.coerce.number().int().min(1).max(16).parse(value);
     } else if (['--crawl', '--dry-run', '--report-only', '--manual-sources-only', '--strict-sources'].includes(arg)) flags.add(arg);
     else throw new Error('INVALID_ARGUMENT');
   }
@@ -65,6 +68,11 @@ async function main() {
     await mkdir(directory, { recursive: true });
     const report = `${directory}/${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}.jsonl`;
     const file = await open(report, 'wx');
+    let reportQueue = Promise.resolve();
+    const writeReport = (line: string) => {
+      reportQueue = reportQueue.then(async () => { await file.write(line); });
+      return reportQueue;
+    };
     const controller = new AbortController();
     const cancel = () => controller.abort();
     process.on('SIGINT', cancel);
@@ -75,21 +83,21 @@ async function main() {
     const sourceAssessments: Record<string, number> = {};
     try {
       await file.write(`${JSON.stringify({ type: 'manifest', version: 1, startedAt: new Date().toISOString(),
-        dryRun, scope: { city: city ?? null, limit: limit ?? null, placesWithWebsite: rows.length }, policy,
+        dryRun, scope: { city: city ?? null, limit: limit ?? null, placesWithWebsite: rows.length }, concurrency, policy,
         discoverSources, allowPublicFacts, databaseWrites: writeClaims, coverage: 'bounded_public_html', claimsAutomaticallyPublished: writeClaims })}\n`);
-      for (const venue of rows) {
+      await scanByHost(rows, concurrency, async (venue) => {
         const result = await crawler.scan(venue, dryRun);
         // Save the HTTP evidence first, so a failed database write can be investigated.
-        await file.write(`${JSON.stringify({ type: 'place', ...result })}\n`);
+        await writeReport(`${JSON.stringify({ type: 'place', ...result })}\n`);
         if (writeClaims && !controller.signal.aborted) {
           try {
             const saved = await saveCardClaims(db, venue, result, crawler.policySnapshot());
             written += saved.written; invalidated += saved.invalidated; unchanged += saved.unchanged;
-            await file.write(`${JSON.stringify({ type: 'database_write', placeId: venue.id, ...saved })}\n`);
+            await writeReport(`${JSON.stringify({ type: 'database_write', placeId: venue.id, ...saved })}\n`);
           } catch (error) {
             writeFailures++;
             const reason = error instanceof Error && /^[A-Z0-9_]+$/.test(error.message) ? error.message : 'CARD_CLAIM_WRITE_FAILED';
-            await file.write(`${JSON.stringify({ type: 'database_write_failed', placeId: venue.id, reason })}\n`);
+            await writeReport(`${JSON.stringify({ type: 'database_write_failed', placeId: venue.id, reason })}\n`);
           }
         }
         counts[result.outcome] = (counts[result.outcome] ?? 0) + 1;
@@ -100,8 +108,7 @@ async function main() {
         evidence += result.evidence.length;
         processed++;
         if (processed % 25 === 0) console.log(JSON.stringify({ processed, total: rows.length, counts, evidence, written, writeFailures }));
-        if (controller.signal.aborted) break;
-      }
+      }, controller.signal);
       const summary = { type: 'summary', completedAt: new Date().toISOString(), processed, total: rows.length,
         cancelled: controller.signal.aborted, counts, sourceAssessments, evidence, written, invalidated, unchanged, writeFailures, report };
       await file.write(`${JSON.stringify(summary)}\n`);

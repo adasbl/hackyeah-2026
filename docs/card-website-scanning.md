@@ -118,6 +118,9 @@ npm run db:scan:cards -- --crawl --city warszawa --limit 10
 # Wszystkie obiekty z URL (również szkice):
 npm run db:scan:cards -- --crawl
 
+# Równoległy odczyt niezależnych hostów (domyślnie 8, zakres 1–16):
+npm run db:scan:cards -- --crawl --concurrency 16
+
 # Sam odczyt HTTP i raport, bez zapisów w bazie:
 npm run db:scan:cards -- --crawl --report-only
 
@@ -131,6 +134,11 @@ npm run db:scan:cards -- --policy .local/card-crawler-policy.json --crawl --manu
 W tym lokalnym środowisku, jeśli `npm` nie znajduje się w PATH, odpowiednikiem polecenia jest
 `node .local/tooling/package/bin/npm-cli.js run db:scan:cards -- --crawl --limit 10`.
 Proces wykonuje jeden przebieg i kończy pracę; nie instaluje harmonogramu ani usługi w tle.
+
+Obiekty z jednego hosta, łącznie z aliasami HTTP/HTTPS/www, są przetwarzane kolejno.
+Równoległość dotyczy różnych hostów; nie zwiększa limitów ani częstotliwości odczytów
+danej witryny. Raport jest zapisywany przez wspólną kolejkę, a proces czeka na zakończenie
+aktywnych odczytów przed zamknięciem pliku i połączenia z bazą.
 
 Odczyt używa `DATABASE_URL`, awaryjnie `DATABASE_MIGRATION_URL`, z `.env.local`.
 Lista obiektów jest pobierana w transakcji PostgreSQL `READ ONLY`. Przy `--crawl`

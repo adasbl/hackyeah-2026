@@ -17,7 +17,7 @@ export function isAccessChallenge(response: PageResponse): boolean {
   if ($('#challenge-form, #challenge-running, #cf-challenge-running').length) return true;
   $('script, style, noscript, template').remove();
   const text = $('body').text().replace(/\s+/g, ' ').trim();
-  return (text.length < 1500 && /verify you are human|checking your browser|enable javascript and cookies|complete the captcha to continue/i.test(text))
+  return (text.length < 1500 && /verify you are human|verify that you(?:'|’)?re not a robot|checking your browser|enable javascript and cookies|complete the captcha to continue/i.test(text))
     || (text.length < 300 && /cf-chl-/i.test(response.body.toString('utf8')));
 }
 
