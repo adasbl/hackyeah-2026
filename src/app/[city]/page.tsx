@@ -88,7 +88,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
           <div className="relative z-20 animate-fade-up">
             <SearchForm
-              key={`${city}|${filters.category}|${filters.cards.join()}|${filters.lat}|${filters.lng}|${filters.radius}`}
+              key={`${city}|${filters.q}|${filters.category}|${filters.cards.join()}|${filters.lat}|${filters.lng}|${filters.radius}`}
               variant="compact"
               cityOptions={cityOptions}
               initialCitySlug={city}
@@ -108,6 +108,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
             <p className="mt-2 text-sm text-slate-500" aria-live="polite">
               {total === 0 ? 'Brak wyników' : `${total} ${plural(total, 'obiekt', 'obiekty', 'obiektów')}`}
               {filters.cards.length > 0 && <> · karty: {filters.cards.map(providerName).join(' + ')}</>}
+              {filters.q && <> · wyszukiwanie: „{filters.q}”</>}
               {filters.open && <> · otwarte teraz</>}
               {located && filters.sort === 'distance' && <> · od najbliższych</>}
             </p>

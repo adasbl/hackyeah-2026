@@ -73,13 +73,20 @@ export function createPlacesService(database: Database) {
     if (query.city && query.city !== ALL_CITIES_SLUG) filters.push(eq(places.citySlug, query.city));
     if (query.category) filters.push(eq(places.category, query.category));
 
-    const search = slugify(query.q ?? '');
+    const phrase = query.q?.trim() ?? '';
+    const search = slugify(phrase);
     if (search) {
       // Taka sama normalizacja polskich znaków i separatorów jak w formularzu.
       const searchable = sql`regexp_replace(translate(lower(concat_ws(' ',
-        ${places.name}, ${places.addressStreet}, ${places.addressHouseNumber}, ${places.city})),
+        ${places.name}, ${places.brand}, ${places.addressStreet}, ${places.addressHouseNumber}, ${places.postalCode}, ${places.city})),
         'ąćęłńóśźż', 'acelnoszz'), '[^a-z0-9]+', '-', 'g')`;
-      filters.push(sql`${searchable} like ${`%${search}%`}`);
+      const textMatch = sql`${searchable} like ${`%${search}%`}`;
+      // Kod z myślnikiem, spacją lub bez separatora wskazuje ten sam obszar.
+      const postcode = /^\d{2}(?:-|\s)?\d{3}$/.test(phrase)
+        ? phrase.replace(/\D/g, '') : undefined;
+      filters.push(postcode
+        ? or(textMatch, sql`regexp_replace(${places.postalCode}, '[^0-9]', '', 'g') = ${postcode}`)!
+        : textMatch);
     }
 
     for (const provider of new Set(query.cards ?? [])) {

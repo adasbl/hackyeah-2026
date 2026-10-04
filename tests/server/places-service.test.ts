@@ -110,6 +110,26 @@ test('mapa ogranicza liczbę punktów, zachowując całkowitą liczbę wyników'
   assert.equal(result.total, MAP_LIMIT + 1);
 });
 
+test('lista i mapa wyszukują po nazwie, brandzie, miejscowości i kodzie pocztowym', async () => {
+  for (const [q, normalized] of [['Łąkowa', 'lakowa'], ['Zdrofit', 'zdrofit'], ['00-001', '00-001'], ['00001', '00001'], ['00 001', '00-001']]) {
+    const { service, queries } = harness([place('pool')]);
+    await service.searchPlaces({ city: 'polska', q });
+    await service.searchMapPoints({ city: 'polska', q });
+    const searches = queries.filter(({ sql }) => sql.includes('from "places"'));
+    assert.equal(searches.length, 4); // Wyniki i liczniki listy oraz mapy.
+    for (const query of searches) {
+      assert.match(query.sql, /concat_ws\(' ',\s*"places"\."name", "places"\."brand"/);
+      assert.match(query.sql, /"places"\."postal_code", "places"\."city"/);
+      assert.doesNotMatch(query.sql, /"city_slug" =/);
+      assert.ok(query.params.includes(`%${normalized}%`));
+      if (/^00/.test(q)) {
+        assert.match(query.sql, /regexp_replace\("places"\."postal_code", '\[\^0-9\]', '', 'g'\) =/);
+        assert.ok(query.params.includes('00001'));
+      }
+    }
+  }
+});
+
 test('otwarte teraz filtruje przed paginacją i liczeniem wyników', async () => {
   const { service } = harness([place('closed', []), place('first'), place('closed-2', []), place('second'), place('third')]);
   const result = await service.searchPlaces({ openNow: true, limit: 1, offset: 1 });

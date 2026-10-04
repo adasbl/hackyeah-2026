@@ -32,13 +32,13 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
   useDismiss(rootRef, open, close);
 
   const selected = value.slug === NEAR_ME_SLUG ? NEAR_ME_OPTION : options.find((o) => o.slug === value.slug);
-  const query = selected && selected.name === value.text ? '' : slugify(value.text);
+  const query = selected && (selected.slug === NEAR_ME_SLUG || selected.slug === ALL_CITIES_SLUG) && selected.name === value.text ? '' : slugify(value.text);
 
   const items = useMemo(() => {
-    const list = query ? options.filter((o) => o.slug !== ALL_CITIES_SLUG && slugify(o.name).includes(query)) : options;
-    const exact = options.some((o) => o.slug === query);
-    // Miasta spoza listy też da się wyszukać
-    const withFree = query && !exact ? [...list, { slug: query, name: value.text.trim(), count: -1 }] : list;
+    const list = query ? options.filter((o) => o.slug !== ALL_CITIES_SLUG && slugify(o.name).includes(query)) : options.filter((o) => o.slug === ALL_CITIES_SLUG);
+    const exact = options.some((o) => slugify(o.name) === query);
+    // Dowolna fraza szuka po miejscowości, kodzie pocztowym, nazwie i brandzie.
+    const withFree = value.text.trim() && !exact && query ? [{ slug: query, name: value.text.trim(), count: -1 }, ...list] : list;
     // „W pobliżu mnie” zawsze na samej górze (gdy nic nie wpisano albo wpisano np. „pobl”).
     const showNear = onPickNearMe && (!query || slugify(NEAR_ME_OPTION.name).includes(query));
     return showNear ? [NEAR_ME_OPTION, ...withFree] : withFree;
@@ -51,7 +51,7 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
       onPickNearMe?.();
       return;
     }
-    onChange({ slug: o.slug, text: o.name });
+    onChange({ slug: o.count === -1 ? null : o.slug, text: o.name });
     setOpen(false);
     inputRef.current?.blur();
   }
@@ -62,6 +62,10 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
       if (!open) return setOpen(true);
       setActive((i) => (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length);
     } else if (e.key === 'Enter' && open && items[active]) {
+      if (items[active].count === -1) {
+        setOpen(false);
+        return; // Dowolną frazę można wyszukać od razu klawiszem Enter.
+      }
       e.preventDefault();
       pick(items[active]);
     } else if (e.key === 'Escape') {
@@ -83,7 +87,7 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
           <input
             ref={inputRef}
             role="combobox"
-            aria-label="Gdzie szukasz?"
+            aria-label="Miejscowość, kod pocztowy lub nazwa"
             aria-expanded={open}
             aria-controls={listId}
             aria-autocomplete="list"
@@ -101,7 +105,8 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
               e.target.select();
             }}
             onKeyDown={onKeyDown}
-            placeholder="Gdzie szukasz?"
+            placeholder="Miejscowość, kod pocztowy lub nazwa"
+            maxLength={100}
             autoComplete="off"
             spellCheck={false}
             className="w-full truncate bg-transparent focus-visible:outline-none text-[15px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-slate-400"
@@ -143,7 +148,7 @@ export function CityCombobox({ options, value, onChange, onPickNearMe, locating 
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className={`truncate text-sm font-medium ${isNear ? 'text-brand-700' : 'text-ink'}`}>{isFree ? `Szukaj „${o.name}”` : o.name}</span>
                   <span className="text-xs text-slate-500">
-                    {isNear ? 'Użyj mojej lokalizacji · od najbliższych' : isAll ? `Wszystkie obiekty · ${o.count}` : isFree ? 'Miasto spoza listy' : countLabel(o.count)}
+                    {isNear ? 'Użyj mojej lokalizacji · od najbliższych' : isAll ? `Wszystkie obiekty · ${o.count}` : isFree ? 'Miejscowość, kod pocztowy lub nazwa · cała Polska' : countLabel(o.count)}
                   </span>
                 </span>
                 {isSel && <Check className="size-4 text-brand-600" aria-hidden />}

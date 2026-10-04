@@ -4,9 +4,9 @@ import { Check, ChevronDown, CreditCard, Loader2, Search, SlidersHorizontal } fr
 import { useRouter } from 'next/navigation';
 import { useId, useRef, useState, useTransition } from 'react';
 import type { CardProviderSlug, CategorySlug } from '@repo/types';
-import { ALL_CITIES_SLUG, CARD_PROVIDERS, categoryOf, cityName, providerName, slugify } from '@/lib/catalog';
+import { ALL_CITIES_SLUG, CARD_PROVIDERS, categoryOf, cityName, providerName } from '@/lib/catalog';
 import type { CityOption } from '@/lib/data/places';
-import { buildSearchUrl, DEFAULT_RADIUS, hasLocation, NEAR_ME_SLUG, type SearchFilters } from '@/lib/search-params';
+import { buildSearchUrl, DEFAULT_RADIUS, hasLocation, NEAR_ME_SLUG, resolveSearchInput, type SearchFilters } from '@/lib/search-params';
 import { CategorySelect } from './search/category-select';
 import { CityCombobox } from './search/city-combobox';
 import { GEO_ERROR_LABEL, useGeolocation } from './search/use-geolocation';
@@ -17,7 +17,7 @@ interface Props {
   initialCategory?: CategorySlug;
   initialCards?: CardProviderSlug[];
   variant?: 'hero' | 'compact';
-  /** Filtry spoza formularza (fraza, „otwarte teraz”, „w pobliżu”, sortowanie) – zostają po ponownym wyszukaniu. */
+  /** Aktualna fraza oraz filtry „otwarte teraz”, „w pobliżu”, sortowanie i widok. */
   preserved?: Partial<Omit<SearchFilters, 'category' | 'cards' | 'page'>>;
 }
 
@@ -30,7 +30,9 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
   const [city, setCity] = useState<{ slug: string | null; text: string }>(
     initialNear
       ? { slug: NEAR_ME_SLUG, text: 'W pobliżu mnie' }
-      : { slug: initialCity?.slug ?? initialCitySlug ?? null, text: initialCity?.name ?? (initialCitySlug ? cityName(initialCitySlug) : '') },
+      : initialCitySlug === ALL_CITIES_SLUG && preserved?.q
+        ? { slug: null, text: preserved.q }
+        : { slug: initialCity?.slug ?? initialCitySlug ?? null, text: initialCity?.name ?? (initialCitySlug ? cityName(initialCitySlug) : '') },
   );
   const [nearPoint, setNearPoint] = useState(initialNear ? { lat: initialNear.lat, lng: initialNear.lng } : null);
   const { state: geo, locate } = useGeolocation();
@@ -78,18 +80,18 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
       search(url);
       return;
     }
-    const typed = slugify(city.text);
-    const slug = city.slug ?? (cityOptions.find((c) => slugify(c.name) === typed)?.slug || typed || ALL_CITIES_SLUG);
-    // Inne miasto = inny obszar: punkt „w pobliżu” przestaje pasować, zostają fraza i „otwarte teraz”.
-    const keep = slug === initialCitySlug && !initialNear ? preserved : { q: preserved?.q, open: preserved?.open, view: preserved?.view };
-    search(buildSearchUrl(slug, { ...keep, category: category || undefined, cards }));
+    const { city: slug, q } = resolveSearchInput(city, cityOptions);
+    // Inny obszar usuwa punkt „w pobliżu”; „otwarte teraz” i widok zostają.
+    const keep = slug === initialCitySlug && !initialNear ? preserved : { open: preserved?.open, view: preserved?.view };
+    const nextQuery = q ?? (city.slug === initialCitySlug && slug !== ALL_CITIES_SLUG ? preserved?.q : undefined);
+    search(buildSearchUrl(slug, { ...keep, q: nextQuery, category: category || undefined, cards }));
   }
 
   const hero = variant === 'hero';
   const collapsible = !hero;
 
   // Podsumowanie AKTUALNIE zastosowanych filtrów (z adresu strony), nie tych w trakcie edycji.
-  const summaryCity = initialNear ? 'W pobliżu mnie' : (initialCity?.name ?? (initialCitySlug ? cityName(initialCitySlug) : 'Cała Polska'));
+  const summaryCity = initialNear ? 'W pobliżu mnie' : preserved?.q || (initialCity?.name ?? (initialCitySlug ? cityName(initialCitySlug) : 'Cała Polska'));
   const summaryDetails = [
     initialCategory ? categoryOf(initialCategory).name : 'Wszystkie kategorie',
     initialCards.length ? initialCards.map(providerName).join(', ') : 'dowolna karta',

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ALL_CITIES_SLUG, slugify } from './catalog';
 import {
   CARD_PROVIDER_SLUGS,
   CATEGORY_SLUGS,
@@ -20,6 +21,19 @@ export type ResultView = (typeof RESULT_VIEWS)[number];
 
 /** Specjalna „pozycja” w polu miasta: wyszukiwanie wokół lokalizacji użytkownika. */
 export const NEAR_ME_SLUG = '@near';
+
+/** Wybrane lub dokładnie wpisane miasto zawęża obszar; inne wpisy są frazą wyszukiwania. */
+export function resolveSearchInput(
+  value: { slug: string | null; text: string },
+  cities: { slug: string; name: string }[],
+): { city: string; q?: string } {
+  const text = value.text.trim();
+  const selected = cities.find((city) => city.slug === value.slug);
+  const exact = text ? cities.find((city) => slugify(city.name) === slugify(text)) : undefined;
+  const match = selected ?? exact;
+  if (match) return { city: match.slug };
+  return { city: ALL_CITIES_SLUG, q: text || undefined };
+}
 
 type RawParams = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
