@@ -1,148 +1,116 @@
-# hackyeah-2026
+# Fit Pass Finder
 
-Wyszukiwarka obiektów sportowych z obsługą kart partnerskich.
+> **Admin panel demo login** (`/admin`):
+> email `test@test.com`, password `test123`
 
-Stack: Next.js na Vercel, PostgreSQL/PostGIS w Supabase, MapLibre GL JS
-z zewnętrznym dostawcą stylu i kafelków (propozycja dla MVP: MapTiler).
-Lokalna aplikacja i wdrożenie korzystają z bazy w Supabase.
+A search engine for sports venues in Poland that shows where you can use MultiSport, BeActive,
+Medicover Sport and PZU Sport cards. The catalogue covers more than 11,000 venues
+from OpenStreetMap.
 
-Założenia projektu: [podsumowanie projektu](SUMMARY.md).
+Project assumptions: [project summary](SUMMARY.md).
 
-## Stan projektu
+Stack: Next.js, React, TypeScript, Tailwind CSS, Drizzle ORM, PostgreSQL/PostGIS on Supabase
+and MapLibre GL JS. The app runs on Vercel.
 
-Repozytorium zawiera aplikację Next.js z wyszukiwarką, mapą MapLibre
-i backendem PostgreSQL/PostGIS oraz migrację i seed danych demonstracyjnych.
-Frontend odczytuje opublikowane obiekty z bazy przy każdym żądaniu.
+## Features
 
-## Połączenie z Supabase
+| Path | What it is |
+|---|---|
+| `/` | search screen (city, card, category) |
+| `/warszawa?cards=multisport&category=basen` | results – linkable, server-rendered |
+| `/polska` | results for the whole of Poland |
+| `/places/[slug]` | venue details with card statuses, a mini-map and an "open now" status |
+| `/polska?lat=52.23&lng=21.01&radius=5000` | "near me" – closest first, within a 5 km radius |
+| `/warszawa?open=1` | only venues that are open now |
+| `/warszawa?view=map` | map view (large map, full screen, filters on the map); list view by default |
+| `/ulubione` | favourite venues saved in the browser (localStorage) |
+| `/admin` | moderation panel for user submissions (login required) |
 
-Jeśli nie masz jeszcze `.env.local`, skopiuj `.env.example`:
+The map groups nearby venues into clusters (a circle with a count and a ring in category colours).
+The home page shows a card comparison: how many published venues in a given area accept each card.
+The list, map, favourites and statistics read from PostgreSQL through `src/server/places.ts`.
+
+On a venue page, the "Uzupełnij informacje o kartach" form lets anyone suggest a card status,
+admission conditions and a source link without signing in. The submission is stored in
+`card_contributions` and does not change public data until an administrator approves it in `/admin`.
+Approval updates `place_card_claims` and the cache, and the history keeps the decision,
+reviewer, date and previous values.
+
+## Running locally
+
+Requirements: Node.js 24.x and npm (the repository pins npm 11.6.2).
+We use npm only; the only lockfile is `package-lock.json`.
 
 ```powershell
-Copy-Item .env.example .env.local
+npm install
+Copy-Item .env.example .env.local   # if the file already exists, add missing values by hand
+npm run db:migrate
+npm run db:seed                     # demo data
+npm run dev                         # http://localhost:3000
 ```
 
-Jeśli plik już istnieje, dopisz brakujące wartości ręcznie; nie nadpisuj go.
-Uzupełnij `DATABASE_URL` i `DATABASE_MIGRATION_URL` adresami skopiowanymi
-z **Supabase → Connect**, zgodnie z opisem poniżej. `.env.example` pozostawia
-te wartości puste; aplikacja wymaga skonfigurowanego `DATABASE_URL`.
-Oba adresy powinny wskazywać ten sam projekt Supabase.
-Bazą wspólną dla lokalnego developmentu i wdrożenia testowego jest Supabase staging.
-
-## Co robimy teraz
-
-1. **Osoba 1 — frontend:** tworzy scaffold Next.js i lockfile npm (`package-lock.json`) w repozytorium,
-   przygotowuje listę na mockach oraz komponent MapLibre.
-2. **Osoba 2 — backend:** dodaje Drizzle, migracje, idempotentny seed 20 obiektów,
-   `GET /api/health` i `GET /api/places` w Route Handlers Next.js.
-   Przygotowuje skrypty `db:generate`, `db:migrate` i `db:seed`,
-   ładowanie `.env.local` oraz zgodność migracji ze schematem PostGIS w Supabase.
-3. **Osoba 3 — hosting:** tworzy Supabase staging, włącza PostGIS i pg_trgm,
-   udostępnia połączenia backendowi, podłącza repo do Vercel po otrzymaniu scaffolda,
-   konfiguruje zmienne Preview i dostawcę kafelków. Następnie uruchamia
-   migracje + seed osoby 2 na staging i sprawdza deployment.
-
-## Konfiguracja chmury
-
-- `DATABASE_URL`: Supabase **Transaction pooler** dla kodu serwerowego na Vercel.
-  Klient postgres.js: `prepare: false`, początkowo `max: 1`, SSL, runtime Node.js.
-- `DATABASE_MIGRATION_URL`: Supabase **direct** lub **Session pooler** dla operatora
-  migracji / osobnego joba CI; poza runtime aplikacji. Migracje wykonujemy jawnie,
-  przed zgodnym z nimi wdrożeniem, nie przy każdym buildzie i PR.
-- `NEXT_PUBLIC_MAP_STYLE_URL`: publiczny URL stylu MapLibre od dostawcy kafelków.
-  Ewentualny klucz w URL ograniczamy do domen właściwego środowiska.
-- Zmienne `NEXT_PUBLIC_SUPABASE_*` są potrzebne dopiero przy integracji Auth;
-  Drizzle łączy się za pomocą adresu PostgreSQL, bez klucza Supabase API.
-- Preview używa staging; przed production tworzymy osobny projekt Supabase
-  i ustawiamy osobne zmienne Production. Hasła/sekretne klucze pozostają poza Git.
-
-Adresy połączeń kopiujemy z **Supabase → Connect**, bez zgadywania hostów.
-Zarówno lokalny Next.js, jak i Vercel łączą się z wybranym projektem Supabase.
-
-Pierwszy cel: adres Vercel preview, `/api/health` zwracający 200
-i `/api/places` zwracający dane z seeda w Supabase.
-
-Dokumentacja: [połączenia Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres),
-[PostGIS](https://supabase.com/docs/guides/database/extensions/postgis),
-[Vercel z Git](https://vercel.com/docs/git),
-[MapLibre](https://maplibre.org/maplibre-gl-js/docs/).
-
-## Deklaracje kart na publicznych stronach obiektów
-
-`npm run db:scan:cards -- --dry-run` przygotowuje plan odczytu URL-i z bazy.
-`npm run db:scan:cards -- --crawl` automatycznie ocenia robots.txt oraz publiczne warunki/licencje
-źródeł, a po dopuszczeniu źródła sprawdza deklaracje kart. Domyślny tryb ograniczonych faktów
-nie wymaga jawnej licencji i nie publikuje cytatów; `--strict-sources` przywraca taki wymóg.
-Skrypt respektuje robots.txt, limity oraz blokady. `--crawl` zapisuje jednoznaczne
-statusy bezpośrednio do `place_card_claims`, ze źródłem, warunkami i datą wygaśnięcia.
-`--report-only` pozwala wykonać odczyt HTTP bez zmian w bazie.
-Instrukcja i format rejestru: [skanowanie stron](docs/card-website-scanning.md).
-# fit-pass-finder
-chat goes brrr...
-
-## Frontend – uruchomienie
-
-Wymagania: Node.js 24.x i npm (w repozytorium wskazano npm 11.6.2).
-Używamy wyłącznie npm; jedynym lockfile jest `package-lock.json`.
+Other commands:
 
 ```bash
-npm install
-npm run dev    # http://localhost:3000
 npm run lint
 npm run typecheck
 npm run test
 npm run build
 ```
 
-## Build na Vercel
+## Connecting to Supabase
 
-Importuj repozytorium z katalogiem głównym projektu ustawionym na jego root.
-Plik `vercel.json` ustawia framework Next.js, instalację `npm ci`
-i build `npm run build`. Wersja Node.js 24.x jest określona w `package.json`.
-Pozostaw domyślny katalog wyjściowy Next.js.
+Fill in `DATABASE_URL` and `DATABASE_MIGRATION_URL` with the connection strings copied
+from **Supabase → Connect**. `.env.example` leaves them empty; the app requires
+`DATABASE_URL` to be set. Both URLs should point to the same Supabase project
+with the PostGIS and pg_trgm extensions enabled.
 
-Worker MapLibre i jego moduł współdzielony są kopiowane do `public/maplibre/`
-po instalacji oraz przed buildem. Dzięki temu trafiają do wdrożenia również
-przy ponownym użyciu zainstalowanych zależności.
+- `DATABASE_URL`: Supabase **Transaction pooler** for server code on Vercel.
+  postgres.js client: `prepare: false`, initially `max: 1`, SSL, Node.js runtime.
+- `DATABASE_MIGRATION_URL`: Supabase **direct** connection or **Session pooler** for migrations,
+  the seed and importers; not used by the app runtime. Migrations are run explicitly,
+  before a deployment that depends on them, not on every build or PR.
+- `NEXT_PUBLIC_MAP_STYLE_URL`: optional public MapLibre style URL; without it the map uses
+  OpenFreeMap. If the URL contains a key, restrict it to the domains of the given environment.
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are needed for
+  administrator login; Drizzle connects with the PostgreSQL URL, without a Supabase API key.
+- Passwords and secret keys stay out of Git.
 
-Build nie wymaga połączenia z bazą. Do działania wdrożonej aplikacji ustaw
-`DATABASE_URL` w środowiskach Preview i Production na Vercel i przygotuj schemat
-bazy przed wdrożeniem. Klient bazy jest inicjalizowany dopiero przy żądaniu.
-`NEXT_PUBLIC_MAP_STYLE_URL` jest opcjonalny; bez niego mapa używa OpenFreeMap.
-Po zmianie tej zmiennej na Vercel wykonaj ponowne wdrożenie.
+Documentation: [Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),
+[PostGIS](https://supabase.com/docs/guides/database/extensions/postgis),
+[Vercel with Git](https://vercel.com/docs/git),
+[MapLibre](https://maplibre.org/maplibre-gl-js/docs/).
 
-Lokalna weryfikacja instalacji takiej jak na Vercel:
+## Building on Vercel
+
+Import the repository with the project root set to the repository root.
+`vercel.json` sets the Next.js framework, `npm ci` as the install command
+and `npm run build` as the build command. Node.js 24.x is set in `package.json`.
+Keep the default Next.js output directory.
+
+The MapLibre worker and its shared module are copied to `public/maplibre/`
+after install and before the build, so they are deployed even when
+installed dependencies are reused.
+
+The build does not need a database connection. For the deployed app to work, set
+`DATABASE_URL` in the Preview and Production environments on Vercel and prepare the database
+schema before deploying. The database client is initialised only on request.
+Redeploy after changing environment variables on Vercel.
+
+To verify locally an install identical to Vercel's:
 
 ```bash
 npm ci
 npm run build
 ```
 
-Dane pochodzą z PostgreSQL przez Drizzle. Format danych opisuje [`docs/api-contract.md`](docs/api-contract.md).
+## Data
 
-| Ścieżka | Co to jest |
-|---|---|
-| `/` | ekran wyszukiwania (miasto, karta, kategoria) |
-| `/warszawa?cards=multisport&category=basen` | wyniki – linkowalne, renderowane na serwerze |
-| `/polska` | wyniki dla całej Polski |
-| `/places/[slug]` | szczegóły obiektu ze statusami kart, mini-mapą i statusem „otwarte teraz” |
-| `/polska?lat=52.23&lng=21.01&radius=5000` | „w pobliżu mnie” – od najbliższych, w promieniu 5 km |
-| `/warszawa?open=1` | tylko obiekty otwarte teraz |
-| `/warszawa?view=map` | widok mapy (duża mapa, pełny ekran, filtry na mapie); domyślnie lista |
-| `/ulubione` | ulubione obiekty zapisane w przeglądarce (localStorage) |
+- [Importing venues from OpenStreetMap for the whole of Poland](docs/osm-poland-import.md),
+  including filling in localities and postcodes.
+- [Scanning venue websites for card acceptance statements](docs/card-website-scanning.md)
+  (`npm run db:scan:cards`). The script respects robots.txt, rate limits and blocks.
+- [Demo data seed](docs/database-seed.md).
+- [Submission moderation and creating an administrator account](docs/admin-moderation.md).
 
-Mapa grupuje bliskie obiekty w klastry (kółko z liczbą i pierścieniem w kolorach kategorii).
-Na stronie głównej jest porównanie kart: ile opublikowanych obiektów w danym obszarze akceptuje każdą kartę.
-Lista, mapa, ulubione i statystyki korzystają z PostgreSQL przez `src/server/places.ts`.
-
-Na stronie obiektu, w osobnym panelu na dole strony, formularz „Uzupełnij informacje o kartach”
-pozwala bez logowania dodać lub poprawić status wybranej karty, warunki wejścia i opcjonalny
-link HTTP(S) do źródła. Akceptacja warunkowa wymaga opisu warunków. Zapis trafia do
-`card_contributions` jako oczekujące zgłoszenie i nie zmienia danych publicznych.
-Dopiero administrator w `/admin` może zatwierdzić lub odrzucić propozycję.
-Zatwierdzenie aktualizuje `place_card_claims` i cache, a historia zachowuje decyzję,
-autora, datę oraz poprzednie wartości. Link do panelu znajduje się w stopce.
-
-Wymagana jest migracja `0002_contribution_moderation`. Logowanie korzysta z
-Supabase Auth, a uprawnienia z tabeli `admin_users`. Pełna konfiguracja i instrukcja
-utworzenia pierwszego administratora: [moderacja zgłoszeń](docs/admin-moderation.md).
+Data: © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright).

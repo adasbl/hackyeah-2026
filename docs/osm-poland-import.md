@@ -1,250 +1,231 @@
-# Import obiektów sportowych z PBF — Polska
+# Importing sports venues from PBF — Poland
 
-Importer czyta lokalny snapshot `.osm.pbf` (np. z [Geofabrik](https://download.geofabrik.de/europe/poland.html)),
-bez Overpass i przeglądarki. Nie wymaga instalacji Osmium ani Pythona.
-Obsługuje nodes, ways oraz relacje, także zagnieżdżone.
+The importer reads a local `.osm.pbf` snapshot (e.g. from [Geofabrik](https://download.geofabrik.de/europe/poland.html)),
+without Overpass or a browser. It does not require Osmium or Python.
+It handles nodes, ways and relations, including nested ones.
 
-Sprawdzenie na `poland-261002.osm.pbf` (SHA-256
+A run on `poland-261002.osm.pbf` (SHA-256
 `0fb658f00a11820a404d8569fa9579fbf078aeae8f3b8886c2b95d6dd91a2b08`)
-przejrzało 276 611 497 elementów i przygotowało 11 210 rekordów:
-400 siłowni, 2 952 baseny, 1 796 fitness, 181 wspinaczkowych,
-5 674 tenisowe, 93 squash/padel i 114 tanecznych.
-9 853 rekordy nie mają miejscowości w tagach, 9 730 nie ma pełnego adresu.
-To wynik filtrowania OSM, nie liczba zweryfikowanych komercyjnych placówek.
-Poszczególne korty i baseny jednego kompleksu mogą być osobnymi elementami OSM.
-Przygotowanie pełnej paczki nie zapisało danych do bazy.
+scanned 276,611,497 elements and prepared 11,210 records:
+400 gyms, 2,952 swimming pools, 1,796 fitness venues, 181 climbing venues,
+5,674 tennis venues, 93 squash/padel venues and 114 dance venues.
+9,853 records have no locality in their tags and 9,730 have no full address.
+This is the result of filtering OSM, not a count of verified commercial venues.
+Individual courts and pools of a single complex can be separate OSM elements.
+Preparing the full package did not write anything to the database.
 
-## Uruchomienie
+## Running
 
-Po pobraniu pliku uruchom z katalogu projektu:
+After downloading the file, run from the project directory:
 
 ```powershell
 npm install
 npm run db:import:osm:poland -- --file .local/osm/poland-261002.osm.pbf --prepare-only
 ```
 
-Możesz podać dowolną nazwę i ścieżkę pliku; ścieżki ze spacjami wymagają cudzysłowów.
-Bez `--file` domyślna lokalizacja to `.local/osm/poland-latest.osm.pbf`.
-`--prepare-only` działa bez połączenia z bazą. Powstaje cache `.local/osm/polska-sport.json`
-i jego datowana kopia. Zawiera gotowe rekordy, SHA-256 pliku źródłowego, hash rekordów,
-liczby dla kategorii, powody pominięcia, braki adresów i miejscowości oraz obiekty wielokategorii.
+You can use any file name and path; paths with spaces need quotes.
+Without `--file` the default location is `.local/osm/poland-latest.osm.pbf`.
+`--prepare-only` works without a database connection. It creates the cache `.local/osm/polska-sport.json`
+and a dated copy of it. The cache contains ready records, the SHA-256 of the source file, a hash of the records,
+counts per category, skip reasons, missing addresses and localities, and multi-category venues.
 
-Przed pierwszym zapisem dodaj wartości `tenis` i `taniec` do enuma `public.place_category`.
-Migracja jest w `drizzle/0001_sports_categories.sql`.
-Dla bazy zarządzanej migracjami Drizzle użyj `npm run db:migrate`.
-Jeżeli istniejący schemat utworzono ręcznie i nie ma historii migracji Drizzle,
-wykonaj samą nową migrację w SQL Editor Supabase:
+Before the first write, add the `tenis` and `taniec` values to the `public.place_category` enum.
+The migration is in `drizzle/0001_sports_categories.sql`.
+For a database managed by Drizzle migrations, use `npm run db:migrate`.
+If the existing schema was created by hand and has no Drizzle migration history,
+run only the new migration in the Supabase SQL Editor:
 
 ```sql
 ALTER TYPE public.place_category ADD VALUE IF NOT EXISTS 'tenis';
 ALTER TYPE public.place_category ADD VALUE IF NOT EXISTS 'taniec';
 ```
 
-Nie trzeba ponownie tworzyć istniejącego schematu ani uruchamiać seeda.
-Importer zgłosi `OSM_POLAND_CATEGORY_MIGRATION_REQUIRED`, jeżeli baza nie zna kategorii z cache.
+There is no need to recreate the existing schema or run the seed.
+The importer reports `OSM_POLAND_CATEGORY_MIGRATION_REQUIRED` if the database does not know a category from the cache.
 
 ```powershell
-# Próba zapisu, cała transakcja jest wycofywana:
+# Trial write; the whole transaction is rolled back:
 npm run db:import:osm:poland -- --from-cache --dry-run
 
-# Zapis nowych obiektów jako szkice:
+# Write new venues as drafts:
 npm run db:import:osm:poland -- --from-cache --apply
 
-# Alternatywnie: zapis nowych obiektów od razu jako publiczne:
+# Alternatively: write new venues as published right away:
 npm run db:import:osm:poland -- --from-cache --apply --publish
 ```
 
-Zapis korzysta z `DATABASE_MIGRATION_URL` w `.env.local`, odbywa się w jednej transakcji
-i partiami po 100 rekordów. Każda para `(osm_type, osm_id)` pojawia się najwyżej raz.
-Istniejące obiekty, ich ręczne poprawki i status publikacji są zachowywane; ponowienie
-nie aktualizuje ich ani nie publikuje wcześniej zapisanych szkiców.
-`--publish` dotyczy wyłącznie nowych rekordów. Po COMMIT powstaje datowany raport
-`polska-import-result-*.json` ze slugami dodanych obiektów.
+Writes use `DATABASE_MIGRATION_URL` from `.env.local` and run in a single transaction,
+in batches of 100 records. Each `(osm_type, osm_id)` pair appears at most once.
+Existing venues, their manual corrections and publication status are preserved; re-running
+does not update them or publish previously saved drafts.
+`--publish` applies only to new records. After COMMIT, a dated report
+`polska-import-result-*.json` lists the slugs of the added venues.
 
-## Kategorie i tagi
+## Categories and tags
 
-| Kategoria aplikacji | Główne tagi OSM |
+| App category | Main OSM tags |
 | --- | --- |
-| `silownia` | `amenity=gym`, sport `bodybuilding`, `weightlifting`, `powerlifting`, `gym`, `crossfit`; nazwa siłowni w `fitness_centre` |
-| `basen` | `leisure=swimming_pool`, `leisure=water_park`, `amenity=swimming_pool`, sport `swimming` w obiekcie sportowym |
-| `fitness` | `leisure=fitness_centre`, sport `fitness`, `aerobics`, `pilates` w obiekcie sportowym |
-| `wspinaczka` | sport `climbing` / `bouldering` w obiekcie sportowym lub `climbing=wall` |
-| `tenis` | sport `tennis` w korcie / obiekcie sportowym |
-| `squash` | sport `squash` lub `padel` w korcie / obiekcie sportowym — wspólna kategoria „Squash / padel” |
-| `taniec` | sport `dance` / `dancing`, `amenity=dancing_school`, `club=dance`, `amenity=school` + `school=dance/dancing` |
+| `silownia` (gym) | `amenity=gym`, sport `bodybuilding`, `weightlifting`, `powerlifting`, `gym`, `crossfit`; gym name in `fitness_centre` |
+| `basen` (pool) | `leisure=swimming_pool`, `leisure=water_park`, `amenity=swimming_pool`, sport `swimming` in a sports venue |
+| `fitness` | `leisure=fitness_centre`, sport `fitness`, `aerobics`, `pilates` in a sports venue |
+| `wspinaczka` (climbing) | sport `climbing` / `bouldering` in a sports venue, or `climbing=wall` |
+| `tenis` (tennis) | sport `tennis` on a court / in a sports venue |
+| `squash` | sport `squash` or `padel` on a court / in a sports venue — shared "Squash / padel" category |
+| `taniec` (dance) | sport `dance` / `dancing`, `amenity=dancing_school`, `club=dance`, `amenity=school` + `school=dance/dancing` |
 
-Obiekt sportowy to odpowiednie `leisure` (`sports_centre`, `sports_hall`, `pitch`,
-`fitness_centre`, `swimming_pool`, `water_park`), `indoor=yes` albo `club=sport`.
-Tag `sport` może zawierać kilka wartości rozdzielonych średnikiem.
-W obecnym schemacie obiekt ma jedną kategorię główną. Gdy pasuje do kilku, priorytet to
-siłownia, basen, fitness, wspinaczka, tenis, squash/padel, taniec; samodzielny basen
-lub park wodny ma zawsze pierwszeństwo kategorii basen. Pozostałe kategorie pozostają
-w surowych tagach i raporcie `multipleCategories`. Obiekt nie jest powielany w bazie.
-Dotychczasowa kategoria joga pozostaje w aplikacji, ale nie jest osobnym celem tego importu.
+A sports venue is a matching `leisure` (`sports_centre`, `sports_hall`, `pitch`,
+`fitness_centre`, `swimming_pool`, `water_park`), `indoor=yes` or `club=sport`.
+The `sport` tag can contain several semicolon-separated values.
+In the current schema a venue has one main category. When several match, the priority is
+gym, pool, fitness, climbing, tennis, squash/padel, dance; a standalone pool
+or water park always gets the pool category. Other categories remain
+in the raw tags and in the `multipleCategories` report. The venue is not duplicated in the database.
+The existing yoga category stays in the app but is not a separate target of this import.
 
-Można ograniczyć import:
+You can limit the import:
 
 ```powershell
 npm run db:import:osm:poland -- --file .local/osm/poland-261002.osm.pbf --categories basen,tenis,squash --prepare-only
 ```
 
-`--from-cache` używa zakresu zapisanej paczki; nie łączy się z `--file` ani `--categories`.
-Nowe przygotowanie tworzy datowaną kopię i zastępuje bieżący cache.
+`--from-cache` uses the scope of the saved package; it cannot be combined with `--file` or `--categories`.
+A new preparation creates a dated copy and replaces the current cache.
 
-## Jakość i geometria
+## Quality and geometry
 
-- Pomijane są stacje plenerowe, jawnie bezpłatny plener (`fee=no` oraz `indoor=no`,
-  `outdoor=yes` lub `location=outdoor`), dostęp `private/no`, nieczynne/planowane obiekty,
-  sklepy, naturalne miejsca wspinaczkowe i inne obiekty niebędące obiektami sportowymi.
-- Miejscowość pochodzi z `addr:city`, `addr:town` lub `addr:village`; brak pozostaje `null`.
-  Po imporcie można uzupełnić brakujące miejscowości osobnym poleceniem opisanym poniżej.
-- Nodes zachowują współrzędne. Ways i relacje dostają środek prostokąta ograniczającego
-  ich pełną geometrię: punkt przybliżony, nie pomiar wejścia ani centroid powierzchni.
-  Brak członka/węzła, cykl relacji lub głębokość ponad 16 powoduje pominięcie obiektu.
-- PBF jest czytany strumieniowo w kilku przejściach. W pamięci zostają kandydaci i ich
-  potrzebne węzły, a nie wszystkie węzły Polski. Zmiana pliku pomiędzy przejściami
-  jest wykrywana przez porównanie hashy.
-- Parser nie odczytuje metadanych autorów ani wersji/timestampów elementów z PBF,
-  aby obsłużyć publiczne pliki Geofabrik z niepełnymi metadanymi. Pochodzenie paczki
-  identyfikuje hash całego pliku i data przygotowania.
-- Normalizowane są adresy, kontakt i obsługiwany podzbiór godzin. Zachowane są oryginalne tagi.
-  Nie są dopisywane ceny, daty potwierdzenia ani informacje o akceptacji kart sportowych.
+- Skipped: outdoor fitness stations, explicitly free outdoor venues (`fee=no` together with `indoor=no`,
+  `outdoor=yes` or `location=outdoor`), `private/no` access, closed/planned venues,
+  shops, natural climbing spots and other non-sports features.
+- The locality comes from `addr:city`, `addr:town` or `addr:village`; if missing it stays `null`.
+  Missing localities can be filled in after the import with the separate command described below.
+- Nodes keep their coordinates. Ways and relations get the centre of the bounding box of
+  their full geometry: an approximate point, not a measured entrance or area centroid.
+  A missing member/node, a relation cycle or a depth above 16 causes the element to be skipped.
+- The PBF is streamed in several passes. Only candidates and the nodes they need
+  are kept in memory, not all nodes in Poland. A file change between passes
+  is detected by comparing hashes.
+- The parser does not read author metadata or element versions/timestamps from the PBF,
+  so it can handle public Geofabrik files with incomplete metadata. The package origin
+  is identified by the hash of the whole file and the preparation date.
+- Addresses, contact details and a supported subset of opening hours are normalised. Original tags are kept.
+  Prices, confirmation dates and card acceptance information are not added.
 
-Dokumentacja źródłowa: [parser PBF](https://github.com/borisgontar/osm-pbf-parser-node),
+Source documentation: [PBF parser](https://github.com/borisgontar/osm-pbf-parser-node),
 [fitness](https://wiki.openstreetmap.org/wiki/Gym_/_Fitness_centre),
-[wspinaczka](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dclimbing),
+[climbing](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dclimbing),
 [padel](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dpadel).
-W aplikacji należy zachować atrybucję © OpenStreetMap contributors i odniesienie do ODbL.
+The app must keep the © OpenStreetMap contributors attribution and a reference to the ODbL.
 
-## Uzupełnianie miejscowości na podstawie współrzędnych
+## Filling in localities from coordinates
 
-`db:fill:osm:cities` dopasowuje istniejące, opublikowane obiekty OSM do pełnych granic
-miejscowości z lokalnego pliku Polski. Nie korzysta z zewnętrznego API, Nominatim ani Overpass.
-Nie wymaga migracji bazy ani ponownego importu obiektów.
+`db:fill:osm:cities` matches existing, published OSM venues to full locality boundaries
+from the local Poland file. It does not use an external API, Nominatim or Overpass.
+It does not require a database migration or re-importing venues.
 
 ```powershell
-# Przygotowanie granic offline, bez połączenia z bazą:
+# Prepare boundaries offline, without a database connection:
 npm run db:fill:osm:cities -- --file .local/osm/poland-261002.osm.pbf --prepare-only
 
-# Plan dopasowania do aktualnych współrzędnych z bazy, bez UPDATE:
+# Plan matches against current database coordinates, without UPDATE:
 npm run db:fill:osm:cities -- --from-cache --dry-run
 
-# Uzupełnienie miejscowości i slugów:
+# Fill in localities and slugs:
 npm run db:fill:osm:cities -- --from-cache --apply
 ```
 
-Można także przygotować granice i zapisać zmiany jednym poleceniem z `--file ... --apply`.
-Domyślnie bez `--apply` skrypt pokazuje wyłącznie plan. `--prepare-only` nie wymaga zmiennych
-środowiskowych; pozostałe tryby czytają `DATABASE_MIGRATION_URL` z `.env.local`.
+You can also prepare boundaries and write changes in one command with `--file ... --apply`.
+Without `--apply` the script only shows the plan. `--prepare-only` does not need environment
+variables; the other modes read `DATABASE_MIGRATION_URL` from `.env.local`.
 
-Zasady dopasowania:
+Matching rules:
 
-- W Polsce `boundary=administrative` + `admin_level=8` oznacza miejscowość (miasto lub wieś).
-  Gminy (7), dzielnice (9), części miejscowości (10) i same punkty `place=*` nie służą do przypisania miasta.
-  Źródło: [poziomy administracyjne OSM w Polsce](https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Aadmin_level).
-- Testowany jest punkt w poligonie, nie sam prostokąt ograniczający ani odległość od centrum.
-  Obsługiwane są wieloczęściowe obszary, wyspy, dziury, odwrócone odcinki i zagnieżdżone relacje.
-  Niepełne i niezamknięte granice oraz cykle relacji są pomijane.
-- Obiekty poza dostępnymi granicami, na krawędzi lub w nakładających się granicach różnych
-  miejscowości pozostają bez przypisania. Nie ma heurystyki „najbliższe miasto”.
-- Istniejące nazwy miejscowości nie są nadpisywane. Brakujący `city_slug` jest wyliczany z istniejącej
-  nazwy. Jeżeli jest slug bez nazwy, rekord jest pomijany, aby zachować możliwą ręczną poprawkę.
-- Aktualizowane są wyłącznie `city`, `city_slug` i `updated_at`; współrzędne, źródłowe tagi,
-  adres uliczny, publikacja i informacje o kartach nie są zmieniane.
-- Granice i wynik odnoszą się do daty snapshotu PBF. Dla ways i relacji obiektów sportowych
-  wykorzystywany jest ich zapisany punkt przybliżony; nie potwierdza to adresu wejścia.
+- In Poland, `boundary=administrative` + `admin_level=8` means a locality (town or village).
+  Municipalities (7), districts (9), parts of localities (10) and bare `place=*` points are not used to assign a city.
+  Source: [OSM administrative levels in Poland](https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Aadmin_level).
+- A point-in-polygon test is used, not just the bounding box or distance from the centre.
+  Multipart areas, islands, holes, reversed segments and nested relations are supported.
+  Incomplete and unclosed boundaries and relation cycles are skipped.
+- Venues outside the available boundaries, on an edge, or in overlapping boundaries of different
+  localities stay unassigned. There is no "nearest city" heuristic.
+- Existing locality names are not overwritten. A missing `city_slug` is derived from the existing
+  name. If there is a slug without a name, the record is skipped to preserve a possible manual correction.
+- Only `city`, `city_slug` and `updated_at` are updated; coordinates, source tags,
+  street address, publication and card information are not changed.
+- Boundaries and results refer to the PBF snapshot date. For ways and relations of sports venues
+  their stored approximate point is used; this does not confirm the entrance address.
 
-Cache `.local/osm/cities/polska-localities.json` zawiera hash PBF i granic oraz listę pominiętych
-granic. Jest niezależny od `.local/osm/polska-sport.json` — uzupełnienie bazy nie modyfikuje
-oryginalnej paczki importu. Zmiana PBF między przejściami i uszkodzenie cache są wykrywane.
+The cache `.local/osm/cities/polska-localities.json` contains the PBF and boundary hashes and a list of skipped
+boundaries. It is independent of `.local/osm/polska-sport.json` — filling in the database does not modify
+the original import package. A PBF change between passes and cache corruption are detected.
 
-Przed pierwszym UPDATE powstaje kopia `.local/osm/cities/before-*.json` z pełnymi zmienianymi
-rekordami. Zapis odbywa się w jednej transakcji; przed COMMIT skrypt sprawdza zachowanie innych
-pól i istniejących rekordów. Raport `.local/osm/cities/result-*.json` zawiera poprzednie i nowe
-wartości oraz tożsamość granicy OSM dla każdego dopasowania. Ponowienie nie nadpisuje miast.
+Before the first UPDATE, a backup `.local/osm/cities/before-*.json` with the full records to be changed is created.
+The write runs in a single transaction; before COMMIT the script checks that other
+fields and existing records are preserved. The report `.local/osm/cities/result-*.json` contains the previous and new
+values and the OSM boundary identity for each match. Re-running does not overwrite cities.
 
-Nie uruchamiaj seeda, aby uzupełnić miasta lub karty — seed zawiera obiekty demonstracyjne.
+Do not run the seed to fill in cities or cards — the seed contains demo venues.
 
-### Wynik uruchomienia 4 października 2026
+### Result
 
-Z pliku `poland-261002.osm.pbf` przygotowano 26 615 poprawnych granic miejscowości;
-595 kandydatów pominięto z powodu geometrii. W bazie z 11 214 opublikowanymi obiektami OSM:
+Of 11,214 published OSM venues, the locality was filled in for 8,617, and 1,626 already had one.
+971 venues remained unassigned: 966 lie outside the available boundaries
+and 5 have an ambiguous match.
 
-- uzupełniono `city` i `city_slug` w 8 617 rekordach;
-- zachowano 1 626 istniejących, kompletnych przypisań;
-- pozostawiono 971 braków: 966 poza dostępnymi granicami i 5 niejednoznacznych dopasowań;
-- ponowny `--dry-run` wykazał 0 planowanych zmian;
-- odczytowa weryfikacja serwisu aplikacji wykazała 2 024 opcje miejscowości oraz poprawne
-  wyszukiwanie, szczegóły i zapytania PostGIS.
+## Automatically filling in postcodes
 
-Raport zapisu: `.local/osm/cities/result-2026-10-04T01-28-42-197Z.json`.
-Kopia sprzed aktualizacji: `.local/osm/cities/before-2026-10-04T01-28-42-197Z.json`.
-Raporty zawierają także identyfikatory nierozwiązanych obiektów i przyczyny pominięcia.
-
-## Automatyczne uzupełnianie kodów pocztowych
-
-`db:fill:osm:postcodes` uzupełnia wyłącznie puste `postal_code` w opublikowanych obiektach OSM.
-Nie przypisuje kodu na podstawie nazwy miasta ani najbliższego adresu. Źródłem jest lokalny PBF,
-a nie płatne API czy katalog poczty. Dane są dopasowaniem z OSM, nie urzędowym potwierdzeniem adresu.
+`db:fill:osm:postcodes` fills in only empty `postal_code` values in published OSM venues.
+It does not assign a code based on the city name or the nearest address. The source is the local PBF,
+not a paid API or a postal directory. The data is an OSM match, not an official address confirmation.
 
 ```powershell
-# Odczyt współrzędnych z bazy i przygotowanie cache, bez UPDATE:
+# Read coordinates from the database and prepare the cache, without UPDATE:
 npm run db:fill:osm:postcodes -- --file .local/osm/poland-261002.osm.pbf --prepare-only
 
-# Plan bez zapisu:
+# Plan without writing:
 npm run db:fill:osm:postcodes -- --from-cache --dry-run
 
-# Uzupełnienie brakujących kodów:
+# Fill in missing postcodes:
 npm run db:fill:osm:postcodes -- --from-cache --apply
 ```
 
-Przygotowanie też wymaga `DATABASE_MIGRATION_URL` w `.env.local`: używa aktualnych współrzędnych
-obiektów bez kodów. Można połączyć przygotowanie i zapis przez `--file ... --apply`.
-Bez `--apply` nie ma aktualizacji bazy. Nie trzeba stosować migracji.
+Preparation also requires `DATABASE_MIGRATION_URL` in `.env.local`: it uses the current coordinates
+of venues without postcodes. Preparation and writing can be combined with `--file ... --apply`.
+Without `--apply` the database is not updated. No migration is needed.
 
-Reguły:
+Rules:
 
-1. Bezpośredni `addr:postcode` na samym obiekcie ma pierwszeństwo. Dopuszczalne są `NN-NNN`
-   i jednoznaczny zapis pięciu cyfr, normalizowany do `NN-NNN`. Nowy import Polski również
-   normalizuje ten zapis. Listy i zakresy kodów nie są zamieniane na pojedynczy kod.
-2. Punkt adresowy z kodem może być dopasowany tylko do identycznej ulicy i numeru domu,
-   maksymalnie 150 m od obiektu. Jeżeli oba źródła podają miejscowość, musi się ona zgadzać.
-   Numer `1/2` nie jest utożsamiany z `1-2`.
-3. Obiekt może dziedziczyć kod z poligonu adresowego zawierającego jego punkt
-   (np. budynku z `addr:postcode`) lub jawnego obszaru `boundary=postal_code` + `postal_code`.
-   Obsługiwane są również granice administracyjne z jednym wyraźnie wskazanym `postal_code`.
-   Źródło tagowania: [OSM postal_code](https://wiki.openstreetmap.org/wiki/Key%3Apostal_code).
-4. Sprzeczne kody z adresu i obszarów, punkty na krawędzi oraz brak odpowiedniego źródła
-   powodują pozostawienie pustego pola. `postal_code` urzędu pocztowego ani pobliski budynek
-   nie są traktowane jako kod obiektu. Jawne adresy spoza Polski są pomijane.
-5. Istniejące niepuste kody, także wymagające ręcznej korekty formatu, są zachowywane.
-   Skrypt aktualizuje tylko `postal_code` i `updated_at`, sprawdzając przed COMMIT inne pola.
-   Nie zmienia miast, ulic, współrzędnych, publikacji ani kart.
+1. A direct `addr:postcode` on the venue itself takes precedence. `NN-NNN`
+   and an unambiguous five-digit form are accepted, normalised to `NN-NNN`. The new Poland import
+   also normalises this form. Lists and ranges of codes are not turned into a single code.
+2. An address point with a postcode can be matched only to an identical street and house number,
+   at most 150 m from the venue. If both sources give a locality, it must match.
+   Number `1/2` is not treated as equal to `1-2`.
+3. A venue can inherit a code from an address polygon containing its point
+   (e.g. a building with `addr:postcode`) or an explicit `boundary=postal_code` + `postal_code` area.
+   Administrative boundaries with a single explicitly set `postal_code` are also supported.
+   Tagging source: [OSM postal_code](https://wiki.openstreetmap.org/wiki/Key%3Apostal_code).
+4. Conflicting codes from addresses and areas, points on an edge and no suitable source
+   leave the field empty. A post office's `postal_code` or a nearby building
+   is not treated as the venue's code. Explicit addresses outside Poland are skipped.
+5. Existing non-empty codes, including ones that need a manual format fix, are preserved.
+   The script updates only `postal_code` and `updated_at`, checking other fields before COMMIT.
+   It does not change cities, streets, coordinates, publication or cards.
 
-Przybliżony punkt ways/relacji może znajdować się poza właściwym budynkiem lub na jego krawędzi.
-Taki obiekt może pozostać bez kodu. Nie tworzymy sztucznych stref z punktów adresowych.
+The approximate point of ways/relations may lie outside the actual building or on its edge.
+Such a venue may stay without a code. We do not create artificial zones from address points.
 
-Miliony obszarów adresowych są przetwarzane strumieniowo przez plik tymczasowy i tablice numeryczne.
-Cache `.local/osm/postcodes/polska-postcodes.json` zawiera tylko obszary i punkty istotne dla targetów,
-hash źródłowego PBF, hash danych oraz współrzędne targetów. Plik tymczasowy jest usuwany po zakończeniu.
-Jeżeli obiekt jest nowy lub przesunięty, trzeba ponowić przygotowanie, aby korzystać z dopasowania
-przestrzennego. Bezpośredni tag obiektu nie wymaga geometrii otoczenia.
+Millions of address areas are streamed through a temporary file and numeric arrays.
+The cache `.local/osm/postcodes/polska-postcodes.json` contains only areas and points relevant to the targets,
+the source PBF hash, a data hash and the target coordinates. The temporary file is deleted when done.
+If a venue is new or has moved, preparation must be re-run to use spatial
+matching. A direct tag on the venue does not need surrounding geometry.
 
-Przed zapisem powstaje kopia `.local/osm/postcodes/before-*.json`. Raport `result-*.json` zawiera
-stare i nowe wartości, źródłowe ID OSM i listę nierozwiązanych obiektów. Ponowienie nie nadpisuje kodów.
-Po kolejnych importach uruchom przygotowanie i `--apply`; skrypt obsługuje to bez ręcznego przeglądania
-każdego rekordu, a przypadki niejednoznaczne pozostawia bez zmian.
+Before writing, a backup `.local/osm/postcodes/before-*.json` is created. The `result-*.json` report contains
+old and new values, source OSM IDs and a list of unresolved venues. Re-running does not overwrite codes.
+After further imports, run preparation and `--apply`; the script handles this without manually reviewing
+each record and leaves ambiguous cases unchanged.
 
-### Wynik uzupełnienia kodów 4 października 2026
+### Result
 
-Przetworzono 4 871 532 proste obszary adresowe z 33 782 256 unikalnymi węzłami oraz
-złożone poligony i granice pocztowe. Cache dla aktualnych targetów zawiera 1 563 obszary
-i 37 395 pobliskich punktów adresowych.
-
-Z 9 908 rekordów bez kodu uzupełniono 2 167, zachowując 1 306 istniejących kodów.
-Łącznie 3 473 obiekty mają kod; 7 741 pozostało bez kodu: 7 712 bez źródła,
-19 ze sprzecznymi kodami, 5 na krawędzi i 5 z jawnym adresem spoza Polski.
-Ponowny `--dry-run` wykazał 0 planowanych zmian. Testy i odczytowy test serwisu aplikacji przeszły.
-
-Raport zapisu: `.local/osm/postcodes/result-2026-10-04T02-17-38-733Z.json`.
-Kopia sprzed zapisu: `.local/osm/postcodes/before-2026-10-04T02-17-38-733Z.json`.
+Of 9,908 venues without a postcode, 2,167 were filled in. In total 3,473 venues have a postcode;
+7,741 remain without one, mostly because OSM has no source for it.

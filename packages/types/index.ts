@@ -1,6 +1,5 @@
 /**
  * Wspólny kontrakt API (frontend ↔ backend).
- * PROPOZYCJA Osoby 1 do uzgodnienia z Osobą 2 – opis i przykłady w docs/api-contract.md.
  * Daty: ISO 8601 (UTC). Współrzędne: WGS84 (EPSG:4326).
  */
 

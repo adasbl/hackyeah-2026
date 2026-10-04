@@ -1,67 +1,61 @@
-# Seed danych demonstracyjnych
+# Demo data seed
 
-Uruchamiaj z katalogu repozytorium po wykonaniu migracji. Skrypt odczytuje
-`DATABASE_MIGRATION_URL` (Session pooler) z `.env.local`; nie korzysta z
-adresu Transaction pooler przeznaczonego dla backendu.
+Run from the repository root after applying migrations. The script reads
+`DATABASE_MIGRATION_URL` (Session pooler) from `.env.local`; it does not use the
+Transaction pooler URL intended for the backend.
 
 ```powershell
 npm run db:seed
 ```
 
-Jeśli zwykły terminal nie znajduje Node.js, można użyć środowiska Codex:
-
-```powershell
-& "C:\Users\macdo\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" --import tsx src/db/seed.ts
-```
-
-Próba wykonująca te same zapytania, ale wycofująca transakcję:
+A dry run that executes the same queries but rolls back the transaction:
 
 ```powershell
 npm run db:seed -- --dry-run
 ```
 
-## Zawartość
+## Contents
 
-- 4 operatorów kart: MultiSport, BeActive, Medicover Sport, PZU Sport.
-- 20 fikcyjnych miejsc z nazwami `[DEMO]` i slugami `demo-*` w Warszawie,
-  Krakowie, Gdańsku, Wrocławiu i Poznaniu; wszystkie 6 kategorii API.
-- 15 opublikowanych miejsc z pełnym adresem oraz 5 nieopublikowanych szkiców
-  bez adresu, miasta i informacji o kartach.
-- 60 informacji o kartach: wszystkie 4 statusy, warunki wejścia, źródła,
-  poziomy pewności i daty. Weryfikacja 2026-10-03 i wygaśnięcie 2027-04-03
-  to stałe daty fikcyjnych scenariuszy.
-- Obiekty bez godzin, telefonu, strony WWW, cen i udogodnień do testowania
-  brakujących danych. Tagi `demo:dataset` identyfikują zestaw; nie nadajemy
-  fikcyjnym miejscom identyfikatorów OSM.
+- 4 card operators: MultiSport, BeActive, Medicover Sport, PZU Sport.
+- 20 fictional venues named `[DEMO]` with `demo-*` slugs in Warsaw,
+  Kraków, Gdańsk, Wrocław and Poznań, covering all 6 API categories.
+- 15 published venues with a full address and 5 unpublished drafts
+  without an address, city or card information.
+- 60 card claims covering all 4 statuses, admission conditions, sources,
+  confidence levels and dates. The verification date 2026-10-03 and expiry date 2027-04-03
+  are fixed dates for the fictional scenarios.
+- Venues without opening hours, phone, website, prices or amenities, for testing
+  missing data. `demo:dataset` tags identify the dataset; fictional venues
+  have no OSM identifiers.
 
-Nazwy, adresy, punkty na mapie, ceny, adresy `example.com` i statusy kart są
-fikcyjne. Nie opisują istniejących obiektów ani potwierdzeń operatorów.
+Names, addresses, map points, prices, `example.com` addresses and card statuses are
+fictional. They do not describe real venues or operator confirmations.
 
-## Powtarzalność
+## Repeatability
 
-Cały seed działa w jednej transakcji. Konflikt lub błąd wycofuje wszystkie
-jej zmiany. Kolejne uruchomienie zachowuje identyfikatory i daty utworzenia,
-aktualizuje dane demonstracyjne po slugu i statusy po parze obiekt–operator.
-Istniejące nazwy operatorów pozostają bez zmian. Rekord o kolidującym slugu,
-który nie należy do tego zestawu, przerywa seed.
+The whole seed runs in a single transaction. A conflict or error rolls back all
+of its changes. Re-running keeps IDs and creation dates,
+updates demo data by slug and statuses by venue–operator pair.
+Existing operator names are left unchanged. A record with a conflicting slug
+that does not belong to this dataset aborts the seed.
 
-Ponowne uruchomienie przywraca dane demonstracyjne z pliku; ręczne zmiany
-w polach tych fikcyjnych rekordów mogą zostać nadpisane. Seed nie usuwa
-innych miejsc i nie uruchamia importu OSM.
+Re-running restores the demo data from the file; manual changes
+to these fictional records may be overwritten. The seed does not delete
+other venues and does not run the OSM import.
 
-Po wykonaniu zobacz rekordy w Supabase Table Editor, schemat `public`.
-Frontend odczytuje dane z bazy wskazanej przez `DATABASE_URL` i pokazuje tylko
-opublikowane obiekty. Seed zapisuje do `DATABASE_MIGRATION_URL`; oba adresy
-muszą wskazywać ten sam projekt, aby zobaczyć dane DEMO w aplikacji.
+Afterwards, browse the records in the Supabase Table Editor, `public` schema.
+The frontend reads from the database set in `DATABASE_URL` and shows only
+published venues. The seed writes to `DATABASE_MIGRATION_URL`; both URLs
+must point to the same project for the DEMO data to appear in the app.
 
-## Testy
+## Tests
 
-`npm run db:test` sprawdza lokalnie dane i zapis/odczyt współrzędnych, bez połączenia
-z bazą. Test integracyjny jest domyślnie pomijany.
+`npm run db:test` checks the data and coordinate read/write locally, without a database
+connection. The integration test is skipped by default.
 
-Opcjonalny test na Supabase wykonuje seed dwukrotnie, sprawdza identyfikatory,
-liczby rekordów, wartości `NULL` i ochronę przed kolizją sluga. Wszystkie zapisy
-są wycofywane. Uruchom tylko na bazie, na której możesz testować:
+The optional Supabase test runs the seed twice and checks IDs, record counts,
+`NULL` values and slug-collision protection. All writes are rolled back.
+Run it only on a database you can test against:
 
 ```powershell
 $env:SEED_INTEGRATION_TEST = "1"

@@ -1,7 +1,7 @@
 /**
  * Pomocnicze typy i funkcje dla mapy.
  * Bbox = prostokąt widoku mapy w kolejności [west, south, east, north] (lng/lat, WGS84),
- * tak samo jak parametr `bbox` w GET /api/places (docs/api-contract.md).
+ * tak samo jak parametr `bbox` w GET /api/places.
  */
 import type { CategorySlug, GeoPoint, PlaceSummary } from '@repo/types';
 
