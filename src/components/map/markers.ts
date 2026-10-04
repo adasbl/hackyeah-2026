@@ -22,7 +22,7 @@ export const MARKER_COLORS: Record<CategorySlug, string> = {
   wspinaczka: '#f59e0b',
   squash: '#6366f1',
   tenis: '#84cc16',
-  taniec: '#a855f7',
+  taniec: '#9333ea',
 };
 
 /** Ikony w pinezkach – te same co w category-icon.tsx, ale z paczki `lucide` (czysty DOM, bez Reacta). */
@@ -74,12 +74,12 @@ export function createPin(place: { name: string; category: CategorySlug }, opts:
   shape.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS(NS, 'path');
   path.setAttribute('d', 'M14 35C14 35 27 23 27 13.5A13 13 0 0 0 1 13.5C1 23 14 35 14 35Z');
-  path.setAttribute('fill', MARKER_COLORS[place.category]);
+  path.setAttribute('fill', MARKER_COLORS[place.category] ?? '#64748b');
   path.setAttribute('stroke', 'white');
   path.setAttribute('stroke-width', '2');
   shape.append(path);
 
-  const icon = createIcon(MARKER_ICONS[place.category], {
+  const icon = createIcon(MARKER_ICONS[place.category] ?? Target, {
     class: `absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-white ${
       opts.size === 'lg' ? 'top-[18px] size-[18px]' : 'top-[13.5px] size-3.5'
     }`,

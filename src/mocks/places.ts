@@ -192,15 +192,15 @@ const AREAS: CityArea[] = [
   { slug: 'poznan', count: 18, postal: ['60', '61'], lat: [52.37, 52.44], lng: [16.86, 16.98], districts: ['Jeżyce', 'Grunwald', 'Wilda', 'Łazarz', 'Rataje', 'Winogrady', 'Piątkowo', 'Górczyn', 'Sołacz', 'Garbary'] },
 ];
 
-type GeneratedCategorySlug = (typeof CATEGORY_WEIGHTS)[number][0];
-
-const NAME_PREFIX: Record<GeneratedCategorySlug, string[]> = {
+const NAME_PREFIX: Record<CategorySlug, string[]> = {
   silownia: ['Siłownia', 'Power Gym', 'Iron Club', 'Gym Point'],
   basen: ['Pływalnia', 'Basen', 'Aqua Centrum'],
   fitness: ['Klub Fitness', 'Fit Studio', 'Studio Ruchu'],
   joga: ['Studio Jogi', 'Joga', 'Przestrzeń Jogi'],
   wspinaczka: ['Ścianka', 'Boulder Hall', 'Centrum Wspinaczkowe'],
   squash: ['Squash Club', 'Korty Squash', 'Squash & Fit'],
+  tenis: ['Kort Tenisowy', 'Tenis Club', 'Akademia Tenisa'],
+  taniec: ['Studio Tańca', 'Szkoła Tańca', 'Dance Point'],
 };
 
 const STREETS = ['Sportowa', 'Leśna', 'Ogrodowa', 'Polna', 'Kwiatowa', 'Słoneczna', 'Lipowa', 'Szkolna', 'Parkowa', 'Klonowa', 'Długa', 'Krótka'];
@@ -222,40 +222,48 @@ const CARD_ODDS: Record<CardProviderSlug, [number, number, number]> = {
   'pzu-sport': [0.2, 0.08, 0.1],
 };
 
-const CONDITIONS: Record<GeneratedCategorySlug, string[]> = {
+const CONDITIONS: Record<CategorySlug, string[]> = {
   silownia: ['Wejścia do 16:00 w dni robocze.', 'Dopłata 5 zł w weekendy.'],
   basen: ['Wejście do 60 min, w weekendy dopłata.', 'Bez strefy saun.'],
   fitness: ['Tylko zajęcia grupowe.', 'Maks. 1 wejście dziennie.'],
   joga: ['Maks. 4 wejścia w miesiącu.', 'Tylko zajęcia poranne.'],
   wspinaczka: ['Tylko bouldering.', 'Dopłata za wypożyczenie sprzętu.'],
   squash: ['Kort poza godzinami szczytu.', 'Dopłata 15 zł do kortu.'],
+  tenis: ['Kort poza godzinami szczytu.', 'Dopłata za oświetlenie kortu.'],
+  taniec: ['Tylko zajęcia grupowe.', 'Maks. 4 wejścia w miesiącu.'],
 };
 
-const PRICE_RANGE: Record<GeneratedCategorySlug, [string, number, number]> = {
+const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
   silownia: ['Wejście jednorazowe', 22, 40],
   basen: ['Bilet 60 min', 18, 36],
   fitness: ['Wejście jednorazowe', 25, 45],
   joga: ['Zajęcia jednorazowe', 35, 60],
   wspinaczka: ['Wejście normalne', 30, 48],
   squash: ['Kort 60 min', 50, 95],
+  tenis: ['Kort 60 min', 40, 90],
+  taniec: ['Zajęcia jednorazowe', 30, 55],
 };
 
-const AMENITIES: Record<GeneratedCategorySlug, string[]> = {
+const AMENITIES: Record<CategorySlug, string[]> = {
   silownia: ['Szatnia', 'Prysznice', 'Strefa wolnych ciężarów', 'Parking', 'Sauna'],
   basen: ['Basen 25 m', 'Brodzik', 'Sauna', 'Jacuzzi'],
   fitness: ['Zajęcia grupowe', 'Strefa cardio', 'Szatnia'],
   joga: ['Maty na miejscu', 'Herbata', 'Zajęcia online'],
   wspinaczka: ['Bouldering', 'Wypożyczalnia butów', 'Kawiarnia'],
   squash: ['Wypożyczalnia rakiet', 'Prysznice', 'Bar'],
+  tenis: ['Wypożyczalnia rakiet', 'Szatnia', 'Oświetlenie kortów'],
+  taniec: ['Lustra', 'Szatnia', 'Zajęcia próbne'],
 };
 
-const HOURS_TEMPLATES: Record<GeneratedCategorySlug, [string, string][][]> = {
+const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
   silownia: [DEFAULT_HOURS, [['pon–niedz', '0:00–24:00']], [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
   basen: [[['pon–niedz', '6:00–22:00']], [['pon–pt', '6:30–22:00'], ['sob–niedz', '8:00–21:00']]],
   fitness: [DEFAULT_HOURS, [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
   joga: [[['pon–pt', '7:00–21:00'], ['sob', '9:00–14:00'], ['niedz', 'zamknięte']], [['pon–sob', '8:00–20:00'], ['niedz', '10:00–14:00']]],
   wspinaczka: [[['pon–pt', '10:00–23:00'], ['sob–niedz', '9:00–22:00']]],
   squash: [[['pon–pt', '7:00–23:00'], ['sob–niedz', '8:00–22:00']], DEFAULT_HOURS],
+  tenis: [[['pon–pt', '8:00–22:00'], ['sob–niedz', '8:00–20:00']]],
+  taniec: [[['pon–pt', '16:00–22:00'], ['sob', '10:00–16:00'], ['niedz', 'zamknięte']]],
 };
 
 function generateSeeds(): Seed[] {

@@ -5,11 +5,32 @@ import * as schema from '@/db/schema';
 import { ALL_CITIES_LABEL, ALL_CITIES_SLUG, slugify } from '@/lib/catalog';
 import { distanceMeters, MAP_LIMIT, type MapPlacesResult } from '@/lib/geo';
 import { isOpenNow } from '@/lib/opening-hours';
-import { toPlaceDetails, type ClaimRow } from './place-mapper';
+import { toPlaceDetails, type ClaimRow, type PlaceRow } from './place-mapper';
 
 const { places, cardProviders, placeCardClaims } = schema;
 type Database = Pick<PostgresJsDatabase<typeof schema>, 'select'>;
 type Filterable = Omit<PlacesQuery, 'limit' | 'offset' | 'sort'>;
+
+/**
+ * Kolumny obiektu dla listy i szczegółów. Pomijamy surowe dane OSM (osm_tags, historia edycji,
+ * oryginalne godziny), których frontend nie pokazuje – przy „otwarte teraz” czytamy wszystkie
+ * pasujące wiersze, więc każdy zbędny bajt idzie razy liczba obiektów.
+ */
+const placeColumns = (() => {
+  const {
+    id, slug, name, category, description, addressStreet, addressHouseNumber, postalCode,
+    city, citySlug, location, openingHours, website, phone, amenities, prices, createdAt, updatedAt,
+  } = getTableColumns(places);
+  return {
+    id, slug, name, category, description, addressStreet, addressHouseNumber, postalCode,
+    city, citySlug, location, openingHours, website, phone, amenities, prices, createdAt, updatedAt,
+  } satisfies Record<keyof PlaceRow, unknown>;
+})();
+
+const emptyCardStats = (): CardStatsResponse => ({
+  total: 0,
+  providers: CARD_PROVIDER_SLUGS.map((provider) => ({ provider, accepted: 0, conditional: 0, notAccepted: 0, unknown: 0 })),
+});
 
 export interface CityOption {
   slug: string;
@@ -31,7 +52,7 @@ function boundedInteger(value: number | undefined, fallback: number, min: number
 }
 
 export function createPlacesService(database: Database) {
-  async function loadDetails(rows: (typeof places.$inferSelect)[]): Promise<PlaceDetails[]> {
+  async function loadDetails(rows: PlaceRow[]): Promise<PlaceDetails[]> {
     if (!rows.length) return [];
     const claims = await database.select({
       ...getTableColumns(placeCardClaims), providerSlug: cardProviders.slug,
@@ -105,8 +126,8 @@ export function createPlacesService(database: Database) {
       ? [sql`extensions.st_distance(${places.location}::extensions.geography,
           extensions.st_setsrid(extensions.st_makepoint(${point.lng}, ${point.lat}), 4326)::extensions.geography)`, asc(places.name), asc(places.id)]
       : [asc(places.name), asc(places.id)];
-    const selection = database.select().from(places).where(where).orderBy(...order);
-    let rows: (typeof places.$inferSelect)[];
+    const selection = database.select(placeColumns).from(places).where(where).orderBy(...order);
+    let rows: PlaceRow[];
     let total: number;
     if (query.openNow) {
       // Godziny mają format aplikacji; filtrujemy przed paginacją i liczeniem wyników.
@@ -169,7 +190,7 @@ export function createPlacesService(database: Database) {
 
   async function getPlacesBySlugs(slugs: string[]): Promise<PlaceSummary[]> {
     if (!slugs.length) return [];
-    const rows = await database.select().from(places)
+    const rows = await database.select(placeColumns).from(places)
       .where(and(eq(places.isPublished, true), inArray(places.slug, [...new Set(slugs)])));
     const bySlug = new Map((await loadDetails(rows)).map((place) => [place.slug, toSummary(place)]));
     return slugs.flatMap((slug) => {
@@ -180,7 +201,7 @@ export function createPlacesService(database: Database) {
 
   async function getCardStats(query: Omit<Filterable, 'cards'>): Promise<CardStatsResponse> {
     const now = new Date();
-    const rows = await database.select().from(places).where(buildWhere({ ...query, cards: [] }));
+    const rows = await database.select(placeColumns).from(places).where(buildWhere({ ...query, cards: [] }));
     const matching = query.openNow ? rows.filter((row) => isOpenNow(row.openingHours, now)) : rows;
     const details = await loadDetails(matching);
     const providers = CARD_PROVIDER_SLUGS.map((provider) => {
@@ -198,8 +219,52 @@ export function createPlacesService(database: Database) {
     return { total: details.length, providers };
   }
 
+  /**
+   * Statystyki kart dla wszystkich miast naraz („polska” = suma): dwa zapytania agregujące w bazie
+   * zamiast pobierania wszystkich obiektów i ich kart osobno dla każdego miasta.
+   * Semantyka jak w getCardStats: brak potwierdzenia lub wygasłe potwierdzenie = unknown.
+   */
+  async function getCardStatsByCity(): Promise<Record<string, CardStatsResponse>> {
+    const published = eq(places.isPublished, true);
+    const [totals, claims] = await Promise.all([
+      database.select({ city: places.citySlug, total: count() })
+        .from(places).where(published).groupBy(places.citySlug),
+      database.select({ city: places.citySlug, provider: cardProviders.slug, status: placeCardClaims.status, total: count() })
+        .from(placeCardClaims)
+        .innerJoin(places, eq(places.id, placeCardClaims.placeId))
+        .innerJoin(cardProviders, eq(cardProviders.id, placeCardClaims.providerId))
+        .where(and(
+          published,
+          inArray(placeCardClaims.status, ['accepted', 'conditional', 'not_accepted']),
+          or(isNull(placeCardClaims.expiresAt), sql`${placeCardClaims.expiresAt} > now()`),
+        ))
+        .groupBy(places.citySlug, cardProviders.slug, placeCardClaims.status),
+    ]);
+
+    const result: Record<string, CardStatsResponse> = {};
+    const statsFor = (city: string) => (result[city] ??= emptyCardStats());
+    const areasOf = (city: string | null) => (city ? [ALL_CITIES_SLUG, city] : [ALL_CITIES_SLUG]);
+    for (const row of totals) {
+      for (const area of areasOf(row.city)) statsFor(area).total += row.total;
+    }
+    for (const row of claims) {
+      for (const area of areasOf(row.city)) {
+        const counts = statsFor(area).providers.find((p) => p.provider === row.provider);
+        if (!counts) continue; // operator spoza listy kart obsługiwanych przez aplikację
+        if (row.status === 'accepted') counts.accepted += row.total;
+        else if (row.status === 'conditional') counts.conditional += row.total;
+        else counts.notAccepted += row.total;
+      }
+    }
+    for (const stats of Object.values(result)) {
+      for (const p of stats.providers) p.unknown = stats.total - p.accepted - p.conditional - p.notAccepted;
+    }
+    result[ALL_CITIES_SLUG] ??= emptyCardStats();
+    return result;
+  }
+
   async function getPlaceBySlug(slug: string): Promise<PlaceDetails | null> {
-    const rows = await database.select().from(places)
+    const rows = await database.select(placeColumns).from(places)
       .where(and(eq(places.slug, slug), eq(places.isPublished, true))).limit(1);
     return (await loadDetails(rows))[0] ?? null;
   }
@@ -217,5 +282,5 @@ export function createPlacesService(database: Database) {
     ];
   }
 
-  return { searchPlaces, searchMapPoints, getPlaceBySlug, getPlacesBySlugs, getCardStats, getCityOptions };
+  return { searchPlaces, searchMapPoints, getPlaceBySlug, getPlacesBySlugs, getCardStats, getCardStatsByCity, getCityOptions };
 }

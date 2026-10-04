@@ -175,3 +175,42 @@ test('statystyki kart traktują brak i wygasłe potwierdzenia jako unknown', asy
   assert.match(queries[0].sql, /"is_published" = \$\d+/);
   assert.ok(queries[0].params.includes('lodz'));
 });
+
+test('statystyki wszystkich miast liczone w bazie dwoma zapytaniami agregującymi', async () => {
+  const database = drizzle.mock({ schema });
+  const queries: { sql: string; params: unknown[] }[] = [];
+  const select = database.select.bind(database) as typeof database.select;
+  database.select = ((fields?: Parameters<typeof select>[0]) => {
+    const builder = fields ? select(fields) : select();
+    const from = builder.from.bind(builder);
+    builder.from = ((table: Parameters<typeof from>[0]) => {
+      const query = from(table);
+      query.execute = (async () => {
+        queries.push(query.toSQL());
+        return table === schema.placeCardClaims
+          ? [
+            { city: 'lodz', provider: 'multisport', status: 'accepted', total: 1 },
+            { city: 'lodz', provider: 'multisport', status: 'conditional', total: 1 },
+            { city: null, provider: 'beactive', status: 'not_accepted', total: 2 },
+            { city: 'lodz', provider: 'nieznany-operator', status: 'accepted', total: 5 },
+          ]
+          : [{ city: 'lodz', total: 3 }, { city: null, total: 2 }];
+      }) as typeof query.execute;
+      return query;
+    }) as typeof builder.from;
+    return builder;
+  }) as typeof database.select;
+
+  const stats = await createPlacesService(database).getCardStatsByCity();
+  assert.equal(queries.length, 2);
+  for (const query of queries) {
+    assert.match(query.sql, /"is_published" = \$\d+/);
+    assert.match(query.sql, /group by/);
+  }
+  assert.match(queries[1].sql, /"expires_at" > now\(\)/);
+  assert.equal(stats.lodz.total, 3);
+  assert.deepEqual(stats.lodz.providers[0], { provider: 'multisport', accepted: 1, conditional: 1, notAccepted: 0, unknown: 1 });
+  assert.equal(stats.polska.total, 5);
+  assert.deepEqual(stats.polska.providers[1], { provider: 'beactive', accepted: 0, conditional: 0, notAccepted: 2, unknown: 3 });
+  assert.ok(stats.polska.providers.slice(2).every((provider) => provider.unknown === 5));
+});

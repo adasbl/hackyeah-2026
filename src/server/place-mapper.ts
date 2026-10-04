@@ -1,7 +1,11 @@
 import { CARD_PROVIDER_SLUGS, type CardClaim, type PlaceDetails } from '@repo/types';
 import type { cardProviders, placeCardClaims, places } from '@/db/schema';
 
-type PlaceRow = typeof places.$inferSelect;
+/** Kolumny potrzebne do szczegółów obiektu – bez surowych danych OSM (tagi, historia edycji). */
+export type PlaceRow = Pick<typeof places.$inferSelect,
+  | 'id' | 'slug' | 'name' | 'category' | 'description' | 'addressStreet' | 'addressHouseNumber'
+  | 'postalCode' | 'city' | 'citySlug' | 'location' | 'openingHours' | 'website' | 'phone'
+  | 'amenities' | 'prices' | 'createdAt' | 'updatedAt'>;
 export type ClaimRow = typeof placeCardClaims.$inferSelect & {
   providerSlug: typeof cardProviders.$inferSelect.slug;
 };
