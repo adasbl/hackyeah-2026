@@ -40,7 +40,7 @@ const chipStyles = {
 };
 
 /** „Otwarte teraz” i „W pobliżu mnie” (+ promień). Wariant `overlay` leży na mapie. */
-export function FilterChips({ city, filters, variant = 'toolbar' }: Props & { variant?: 'toolbar' | 'overlay' }) {
+export function FilterChips({ city, filters, variant = 'toolbar', showClear = false }: Props & { variant?: 'toolbar' | 'overlay'; showClear?: boolean }) {
   const { url, go, pending } = useResultsNav({ city, filters });
   const { state: geo, locate } = useGeolocation();
   const located = hasLocation(filters);
@@ -55,7 +55,7 @@ export function FilterChips({ city, filters, variant = 'toolbar' }: Props & { va
   const geoError = GEO_ERROR_LABEL[geo];
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Link href={url({ open: !filters.open })} scroll={false} aria-pressed={filters.open} className={`${chipBase} ${filters.open ? s.on : s.off}`}>
           <Clock className="size-4" aria-hidden />
@@ -85,6 +85,16 @@ export function FilterChips({ city, filters, variant = 'toolbar' }: Props & { va
             {geo === 'locating' ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <LocateFixed className="size-4" aria-hidden />}
             {geo === 'locating' ? 'Ustalam lokalizację…' : 'W pobliżu mnie'}
           </button>
+        )}
+        {showClear && (
+          <Link
+            href={url({ category: undefined, cards: [], q: undefined, open: false, lat: undefined, lng: undefined, radius: undefined, sort: 'name' })}
+            scroll={false}
+            className={`${chipBase} ${s.off}`}
+          >
+            <X className="size-4" aria-hidden />
+            Wyczyść filtry
+          </Link>
         )}
         {pending && <Loader2 className="size-4 shrink-0 animate-spin text-brand-600" aria-label="Wczytywanie" />}
       </div>
@@ -117,8 +127,8 @@ export function SortSelect({ city, filters }: Props) {
 
   const busy = pending || geo === 'locating';
   return (
-    <div className="flex w-full flex-col gap-2 sm:w-48">
-      <label htmlFor={selectId} className="text-sm font-medium text-slate-600">Sortowanie</label>
+    <div className="flex w-full shrink-0 flex-col gap-2 sm:w-48">
+      <label htmlFor={selectId} className="sr-only">Sortowanie</label>
       <div className="relative">
         <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : filters.sort === 'distance' ? <Navigation className="size-5" aria-hidden /> : <ArrowDownAZ className="size-5" aria-hidden />}
@@ -129,9 +139,9 @@ export function SortSelect({ city, filters }: Props) {
           onChange={(event) => sortBy(event.target.value as PlacesSort)}
           disabled={busy}
           aria-busy={busy}
-          className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-11 pr-8 text-sm font-medium text-ink transition hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
+          className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-11 pr-8 text-sm font-medium text-ink transition hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
         >
-          <option value="name">Nazwa</option>
+          <option value="name">Nazwa A–Z</option>
           <option value="distance">Najbliżej</option>
         </select>
         <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-500" aria-hidden />
@@ -160,11 +170,11 @@ export function ViewToggle({ city, filters }: Props) {
   }, [filters.view]);
 
   const views: { value: ResultView; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Lista', icon: <List className="size-4" aria-hidden /> },
-    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-4" aria-hidden /> },
+    { value: 'list', label: 'Lista', icon: <List className="size-5" aria-hidden /> },
+    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-5" aria-hidden /> },
   ];
   return (
-    <nav aria-label="Widok wyników" className="inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
+    <nav aria-label="Widok wyników" className="inline-flex h-14 shrink-0 items-center gap-1 rounded-2xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15 sm:h-16 sm:p-1.5">
       {views.map((v) => {
         const active = filters.view === v.value;
         return (
@@ -179,7 +189,7 @@ export function ViewToggle({ city, filters }: Props) {
             scroll={false}
             aria-current={active ? 'page' : undefined}
             aria-label={v.label}
-            className={`flex h-full min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] sm:min-w-20 ${
+            className={`flex h-full min-w-12 items-center justify-center gap-2 rounded-xl px-3 text-base font-semibold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] sm:min-w-28 sm:px-5 ${
               active ? 'bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-md shadow-brand-600/30 ring-1 ring-inset ring-white/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'
             }`}
           >

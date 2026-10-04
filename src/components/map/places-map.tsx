@@ -124,9 +124,6 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
     const points = initialPlacesRef.current.map((p) => p.location);
     if (center) points.push(center);
     const [w, s, e, n] = bboxOf(points);
-    // Na ekranach dotykowych jeden palec przewija stronę, a mapę przesuwa się dwoma palcami –
-    // inaczej mapa „łapie” przewijanie i nie da się zjechać do listy.
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE_URL,
@@ -135,7 +132,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
       attributionControl: { compact: true },
       dragRotate: false,
       pitchWithRotate: false,
-      cooperativeGestures: isTouch,
+      cooperativeGestures: false,
       locale: {
         'CooperativeGesturesHandler.MobileHelpText': 'Przesuń mapę dwoma palcami',
         'CooperativeGesturesHandler.WindowsHelpText': 'Użyj Ctrl + kółko myszy, aby przybliżyć mapę',
@@ -152,6 +149,13 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
     map.addControl(new maplibregl.FullscreenControl({ container: wrapperRef.current ?? undefined }), 'top-right');
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     mapRef.current = map;
+    // Rozwinięcie formularza i zmiana wysokości okna zmieniają dostępną przestrzeń mapy.
+    let resizeFrame = 0;
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => map.resize());
+    });
+    resizeObserver.observe(containerRef.current);
 
     // Lokalizacja użytkownika: watchPosition od razu wywołuje pytanie o zgodę w przeglądarce.
     // Kropkę pokazujemy, ale widoku nie ruszamy – przybliża dopiero kliknięcie przycisku.
@@ -322,6 +326,8 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
 
     return () => {
       disposed = true;
+      resizeObserver.disconnect();
+      cancelAnimationFrame(resizeFrame);
       clearTimeout(timer);
       cancelAnimationFrame(syncFrame);
       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);

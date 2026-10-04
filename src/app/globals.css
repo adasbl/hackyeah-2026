@@ -57,3 +57,40 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Widok mapy wypełnia okno; lista i pozostałe strony zachowują zwykłe przewijanie. */
+html:has([data-results-view="map"]),
+body:has([data-results-view="map"]) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:has([data-results-view="map"]) > header {
+  flex-shrink: 0;
+}
+
+body:has([data-results-view="map"]) > main {
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:has([data-results-view="map"]) > footer {
+  display: none;
+}
+
+[data-results-view="map"] .results-controls {
+  max-height: 55%;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.fullscreen-map-filters {
+  display: none;
+}
+
+:fullscreen .fullscreen-map-filters,
+.maplibregl-pseudo-fullscreen .fullscreen-map-filters {
+  display: block;
+}

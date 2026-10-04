@@ -1,4 +1,4 @@
-import { SearchX, X } from 'lucide-react';
+import { SearchX } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -81,58 +81,46 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   const mapKey = [city, filters.category, filters.cards.join(), filters.q, filters.open, filters.lat, filters.lng, filters.radius].join('|');
 
   return (
-    <div className="relative isolate">
+    <div data-results-view={filters.view} className={`relative isolate ${!isList ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
       <Backdrop />
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-        {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
-        <div className="relative z-20 animate-fade-up">
-          <SearchForm
-            key={`${city}|${filters.category}|${filters.cards.join()}|${filters.lat}|${filters.lng}|${filters.radius}`}
-            variant="compact"
-            cityOptions={cityOptions}
-            initialCitySlug={city}
-            initialCategory={filters.category}
-            initialCards={filters.cards}
-            preserved={{ q: filters.q, open: filters.open, lat: filters.lat, lng: filters.lng, radius: filters.radius, sort: filters.sort, view: filters.view }}
-          />
-        </div>
-
-        <div className="mb-5 mt-6">
-          <div className="flex items-center justify-between gap-3 sm:gap-6">
-            <h1 className="min-w-0 flex-1 text-balance text-xl font-bold leading-tight tracking-tight sm:text-2xl lg:text-3xl">
-              {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'} {placeLabel}
-            </h1>
-            <ViewToggle city={city} filters={filters} />
+      <div className={`results-layout mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 ${!isList ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
+        <div className="results-controls">
+          {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
+          <div className="relative z-20 animate-fade-up">
+            <SearchForm
+              key={`${city}|${filters.category}|${filters.cards.join()}|${filters.lat}|${filters.lng}|${filters.radius}`}
+              variant="compact"
+              cityOptions={cityOptions}
+              initialCitySlug={city}
+              initialCategory={filters.category}
+              initialCards={filters.cards}
+              preserved={{ q: filters.q, open: filters.open, lat: filters.lat, lng: filters.lng, radius: filters.radius, sort: filters.sort, view: filters.view }}
+            />
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-            <p className="min-w-0 flex-1 text-sm text-slate-500" aria-live="polite">
+
+          <div className="mb-5 mt-6">
+            <div className="flex items-center justify-between gap-3 sm:gap-6">
+              <h1 className="min-w-0 flex-1 text-balance text-xl font-bold leading-tight tracking-tight sm:text-2xl lg:text-3xl">
+                {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'} {placeLabel}
+              </h1>
+              <ViewToggle city={city} filters={filters} />
+            </div>
+            <p className="mt-2 text-sm text-slate-500" aria-live="polite">
               {total === 0 ? 'Brak wyników' : `${total} ${plural(total, 'obiekt', 'obiekty', 'obiektów')}`}
               {filters.cards.length > 0 && <> · karty: {filters.cards.map(providerName).join(' + ')}</>}
               {filters.open && <> · otwarte teraz</>}
               {located && filters.sort === 'distance' && <> · od najbliższych</>}
             </p>
-            {hasFilters && (
-              <Link
-                href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
-                className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-ink"
-              >
-                <X className="size-3.5" aria-hidden />
-                Wyczyść filtry
-              </Link>
-            )}
+          </div>
+
+          <div className="relative z-10 mb-4 flex flex-wrap items-center gap-3 border-y border-slate-200 py-3">
+            <FilterChips city={city} filters={filters} showClear={hasFilters} />
+            {isList && items.length > 0 && <SortSelect city={city} filters={filters} />}
           </div>
         </div>
 
-        {/* Lista: filtry + sortowanie nad wynikami. Mapa: filtry leżą na samej mapie, a sortowanie nie ma sensu. */}
-        {(isList || !hasResults) && (
-          <div className="relative z-10 mb-6 flex flex-col gap-4 border-y border-slate-200 py-4 sm:flex-row sm:items-end sm:justify-between">
-            <FilterChips city={city} filters={filters} />
-            {isList && items.length > 0 && <SortSelect city={city} filters={filters} />}
-          </div>
-        )}
-
         {!hasResults ? (
-          <div className="animate-fade-up rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center backdrop-blur">
+          <div className={`animate-fade-up rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center backdrop-blur ${!isList ? 'min-h-0 flex-1 overflow-y-auto' : ''}`}>
             <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
               <SearchX className="size-7" aria-hidden />
             </span>
@@ -145,11 +133,6 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
                   : 'Zmień kartę lub kategorię albo poszukaj w całej Polsce.'}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {hasFilters && (
-                <Link href={`/${city}`} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50">
-                  Wyczyść filtry
-                </Link>
-              )}
               {filters.open && (
                 <Link
                   href={buildSearchUrl(city, { ...filters, open: false, page: 1 })}
@@ -177,13 +160,14 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
             </div>
           </div>
         ) : !isList ? (
-          <div className="animate-fade-up">
+          <div className="min-h-0 flex-1 animate-fade-up">
             <PlacesMapLazy
               key={mapKey}
               initialPlaces={mapResults.items}
               initialTotal={mapResults.total}
               filters={mapFilters}
-              overlay={<FilterChips city={city} filters={filters} variant="overlay" />}
+              heightClassName="h-full min-h-0"
+              overlay={<div className="fullscreen-map-filters"><FilterChips city={city} filters={filters} variant="overlay" showClear={hasFilters} /></div>}
             />
           </div>
         ) : (
