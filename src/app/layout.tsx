@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
 import { SiteHeader } from '@/components/site-header';
 import { NavigationTracker } from '@/components/navigation/navigation-tracker';
 import { SiteFooter } from '@/components/site-footer';
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pl" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="pl" className={GeistSans.variable}>
       <body className="flex min-h-dvh flex-col font-sans">
         <NavigationTracker />
         <SiteHeader />

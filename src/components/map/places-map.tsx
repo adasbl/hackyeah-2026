@@ -79,6 +79,15 @@ function toGeoJson(places: MapPlace[]): GeoJSON.FeatureCollection<GeoJSON.Point,
 
 export const MAP_HEIGHT = 'h-[68dvh] min-h-[420px] sm:h-[72dvh] sm:max-h-[820px]';
 
+/**
+ * Uruchamia z wyprzedzeniem workery MapLibre (wspólne dla wszystkich map na stronie).
+ * Wołane razem z wcześniejszym pobraniem kodu mapy – po przełączeniu na mapę kafelki ładują się od razu,
+ * a workery przeżywają też ponowne utworzenie mapy po zmianie filtrów.
+ */
+export function warmUpMap() {
+  maplibregl.prewarm();
+}
+
 export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heightClassName = MAP_HEIGHT }: Props) {
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -106,6 +115,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
   // 1) Utworzenie mapy – raz, po zamontowaniu.
   useEffect(() => {
     if (!containerRef.current) return;
+    warmUpMap(); // workery zostają po zmianie filtrów (nowa mapa), zamiast startować od zera
     let timer: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
 
@@ -272,10 +282,20 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
         });
       }
     });
+    // Podczas przesuwania „move” przychodzi wiele razy na klatkę – synchronizujemy najwyżej raz na klatkę.
+    let syncFrame = 0;
+    const scheduleSync = () => {
+      if (!syncFrame) {
+        syncFrame = requestAnimationFrame(() => {
+          syncFrame = 0;
+          syncMarkers();
+        });
+      }
+    };
     map.on('sourcedata', (e) => {
-      if (e.sourceId === SOURCE && e.isSourceLoaded) syncMarkers();
+      if (e.sourceId === SOURCE && e.isSourceLoaded) scheduleSync();
     });
-    map.on('move', syncMarkers);
+    map.on('move', scheduleSync);
     map.on('moveend', syncMarkers);
 
     async function loadVisible() {
@@ -303,6 +323,7 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
     return () => {
       disposed = true;
       clearTimeout(timer);
+      cancelAnimationFrame(syncFrame);
       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
       userMarker?.remove();
       pinMarkers.forEach((m) => m.remove());

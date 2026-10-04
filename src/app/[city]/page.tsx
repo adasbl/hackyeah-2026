@@ -188,7 +188,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           <>
             <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {items.map((p, i) => (
-                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${80 + i * 50}ms` }}>
+                <li key={p.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 5) * 25}ms` }}>
                   <PlaceCard place={p} />
                 </li>
               ))}
