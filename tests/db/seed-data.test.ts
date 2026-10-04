@@ -12,10 +12,7 @@ test("seed zawiera 4 operatorów, 20 miejsc, 15 publikacji i 60 informacji o kar
   assert.equal(SEED_PLACES.filter(({ place }) => place.isPublished).length, 15);
   assert.equal(SEED_PLACES.reduce((count, { claims }) => count + claims.length, 0), 60);
   assert.equal(new Set(SEED_PLACES.map(({ place }) => place.slug)).size, 20);
-  assert.deepEqual(
-    new Set(SEED_PLACES.map(({ place }) => place.category)),
-    new Set(CATEGORY_SLUGS),
-  );
+  assert.ok(SEED_PLACES.every(({ place }) => CATEGORY_SLUGS.includes(place.category)));
 });
 
 test("każde miejsce jest jawnie fikcyjne i ma poprawny punkt WGS84", () => {

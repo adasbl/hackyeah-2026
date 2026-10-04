@@ -9,7 +9,7 @@ Frontend pobiera dane z PostgreSQL przez `src/lib/data/places.ts` i serwis `src/
 - daty: ISO 8601 w UTC, np. `"2026-09-12T10:00:00Z"`,
 - współrzędne: `{ "lat": 52.2, "lng": 21.0 }` (WGS84),
 - ceny: kwota w złotych (`number`) + `currency: "PLN"`,
-- slugi kategorii: `silownia`, `basen`, `fitness`, `joga`, `wspinaczka`, `squash`,
+- slugi kategorii: `silownia`, `basen`, `fitness`, `joga`, `wspinaczka`, `squash`, `tenis`, `taniec`; `squash` obejmuje również padel,
 - slugi kart: `multisport`, `beactive`, `medicover-sport`, `pzu-sport`,
 - status karty: `accepted` | `conditional` | `not_accepted` | `unknown` (nigdy boolean),
 - źródło: `venue` | `public_source` | `automated` | `community`,

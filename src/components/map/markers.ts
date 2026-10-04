@@ -3,7 +3,7 @@
  * Elementy DOM tworzymy ręcznie, bo MapLibre nie renderuje Reacta.
  * Plik importujemy tylko z komponentów ładowanych po stronie klienta (ssr: false).
  */
-import { createElement as createIcon, Dumbbell, Flower2, HeartPulse, Mountain, Target, Waves, type IconNode } from 'lucide';
+import { createElement as createIcon, CircleDot, Dumbbell, Flower2, HeartPulse, Mountain, Music, Target, Waves, type IconNode } from 'lucide';
 import * as maplibregl from 'maplibre-gl';
 import { CATEGORY_SLUGS, type CategorySlug } from '@repo/types';
 import { categoryOf } from '@/lib/catalog';
@@ -21,6 +21,8 @@ export const MARKER_COLORS: Record<CategorySlug, string> = {
   joga: '#10b981',
   wspinaczka: '#f59e0b',
   squash: '#6366f1',
+  tenis: '#84cc16',
+  taniec: '#a855f7',
 };
 
 /** Ikony w pinezkach – te same co w category-icon.tsx, ale z paczki `lucide` (czysty DOM, bez Reacta). */
@@ -31,6 +33,8 @@ const MARKER_ICONS: Record<CategorySlug, IconNode> = {
   joga: Flower2,
   wspinaczka: Mountain,
   squash: Target,
+  tenis: CircleDot,
+  taniec: Music,
 };
 
 /** Dymek nad pinezką: czubek pinezki jest w punkcie, a jej „główka” ~22 px wyżej. */

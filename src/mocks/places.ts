@@ -192,7 +192,9 @@ const AREAS: CityArea[] = [
   { slug: 'poznan', count: 18, postal: ['60', '61'], lat: [52.37, 52.44], lng: [16.86, 16.98], districts: ['Jeżyce', 'Grunwald', 'Wilda', 'Łazarz', 'Rataje', 'Winogrady', 'Piątkowo', 'Górczyn', 'Sołacz', 'Garbary'] },
 ];
 
-const NAME_PREFIX: Record<CategorySlug, string[]> = {
+type GeneratedCategorySlug = (typeof CATEGORY_WEIGHTS)[number][0];
+
+const NAME_PREFIX: Record<GeneratedCategorySlug, string[]> = {
   silownia: ['Siłownia', 'Power Gym', 'Iron Club', 'Gym Point'],
   basen: ['Pływalnia', 'Basen', 'Aqua Centrum'],
   fitness: ['Klub Fitness', 'Fit Studio', 'Studio Ruchu'],
@@ -203,14 +205,14 @@ const NAME_PREFIX: Record<CategorySlug, string[]> = {
 
 const STREETS = ['Sportowa', 'Leśna', 'Ogrodowa', 'Polna', 'Kwiatowa', 'Słoneczna', 'Lipowa', 'Szkolna', 'Parkowa', 'Klonowa', 'Długa', 'Krótka'];
 
-const CATEGORY_WEIGHTS: [CategorySlug, number][] = [
+const CATEGORY_WEIGHTS = [
   ['silownia', 30],
   ['fitness', 22],
   ['basen', 14],
   ['joga', 14],
   ['wspinaczka', 10],
   ['squash', 10],
-];
+] as const satisfies readonly (readonly [CategorySlug, number])[];
 
 /** Udział statusów [accepted, conditional, not_accepted] – reszta to unknown. Różne karty mają różny zasięg. */
 const CARD_ODDS: Record<CardProviderSlug, [number, number, number]> = {
@@ -220,7 +222,7 @@ const CARD_ODDS: Record<CardProviderSlug, [number, number, number]> = {
   'pzu-sport': [0.2, 0.08, 0.1],
 };
 
-const CONDITIONS: Record<CategorySlug, string[]> = {
+const CONDITIONS: Record<GeneratedCategorySlug, string[]> = {
   silownia: ['Wejścia do 16:00 w dni robocze.', 'Dopłata 5 zł w weekendy.'],
   basen: ['Wejście do 60 min, w weekendy dopłata.', 'Bez strefy saun.'],
   fitness: ['Tylko zajęcia grupowe.', 'Maks. 1 wejście dziennie.'],
@@ -229,7 +231,7 @@ const CONDITIONS: Record<CategorySlug, string[]> = {
   squash: ['Kort poza godzinami szczytu.', 'Dopłata 15 zł do kortu.'],
 };
 
-const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
+const PRICE_RANGE: Record<GeneratedCategorySlug, [string, number, number]> = {
   silownia: ['Wejście jednorazowe', 22, 40],
   basen: ['Bilet 60 min', 18, 36],
   fitness: ['Wejście jednorazowe', 25, 45],
@@ -238,7 +240,7 @@ const PRICE_RANGE: Record<CategorySlug, [string, number, number]> = {
   squash: ['Kort 60 min', 50, 95],
 };
 
-const AMENITIES: Record<CategorySlug, string[]> = {
+const AMENITIES: Record<GeneratedCategorySlug, string[]> = {
   silownia: ['Szatnia', 'Prysznice', 'Strefa wolnych ciężarów', 'Parking', 'Sauna'],
   basen: ['Basen 25 m', 'Brodzik', 'Sauna', 'Jacuzzi'],
   fitness: ['Zajęcia grupowe', 'Strefa cardio', 'Szatnia'],
@@ -247,7 +249,7 @@ const AMENITIES: Record<CategorySlug, string[]> = {
   squash: ['Wypożyczalnia rakiet', 'Prysznice', 'Bar'],
 };
 
-const HOURS_TEMPLATES: Record<CategorySlug, [string, string][][]> = {
+const HOURS_TEMPLATES: Record<GeneratedCategorySlug, [string, string][][]> = {
   silownia: [DEFAULT_HOURS, [['pon–niedz', '0:00–24:00']], [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
   basen: [[['pon–niedz', '6:00–22:00']], [['pon–pt', '6:30–22:00'], ['sob–niedz', '8:00–21:00']]],
   fitness: [DEFAULT_HOURS, [['pon–pt', '6:00–23:00'], ['sob–niedz', '8:00–22:00']]],
