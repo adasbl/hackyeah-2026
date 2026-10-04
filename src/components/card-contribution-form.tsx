@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useCallback, useEffect, useId, useRef, useState } from 'react';
-import { PencilLine } from 'lucide-react';
+import { ChevronDown, PencilLine } from 'lucide-react';
 import type { CardClaim, CardProviderSlug } from '@repo/types';
 import { CARD_PROVIDERS, providerName } from '@/lib/catalog';
 import { saveCardContribution } from '@/lib/data/card-contribution-actions';
@@ -16,13 +16,19 @@ export function CardContributionForm({ placeSlug, cards }: { placeSlug: string; 
   }, []);
 
   return (
-    <details ref={detailsRef} className="mt-6 rounded-xl border border-brand-100 bg-brand-50/50">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-brand-700">
-        <PencilLine className="size-4 shrink-0" aria-hidden />
-        Uzupełnij informacje o kartach
+    <details ref={detailsRef} className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl p-4 transition hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/40 group-open:rounded-b-none sm:px-6 [&::-webkit-details-marker]:hidden">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+          <PencilLine className="size-5" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-ink">Uzupełnij informacje o kartach</span>
+          <span className="block text-sm text-slate-500">Znasz zasady wejścia? Podziel się nimi z innymi.</span>
+        </span>
+        <ChevronDown className="size-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden />
       </summary>
-      <div className="border-t border-brand-100 p-4">
-        <p className="mb-4 text-sm text-slate-600">Wiesz, jakie karty honoruje ten obiekt? Zgłoś nową informację lub poprawkę. Pojawi się na stronie po sprawdzeniu i zatwierdzeniu przez administratora.</p>
+      <div className="border-t border-slate-100 p-4 sm:p-6">
+        <p className="mb-4 text-sm text-slate-600">Wiesz, jakie karty honoruje ten obiekt? Dodaj lub popraw informację. Zmiana będzie widoczna od razu jako zgłoszenie społeczności.</p>
         <ContributionFields key={`${provider}-${formVersion}`} placeSlug={placeSlug} provider={provider} onProviderChange={setProvider} onSuccess={handleSuccess} claim={cards.find((card) => card.provider === provider)} />
       </div>
     </details>

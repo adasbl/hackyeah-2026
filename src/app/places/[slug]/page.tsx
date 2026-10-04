@@ -79,7 +79,8 @@ export default async function PlaceDetailsPage({ params }: Props) {
       {place.description && <p className="mt-4 max-w-2xl text-slate-700">{place.description}</p>}
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21.25rem]">
-        <section aria-labelledby="cards-h" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="min-w-0 space-y-6">
+        <section aria-labelledby="cards-h" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 id="cards-h" className="text-lg font-semibold">Karty sportowe</h2>
           <p className="mb-4 text-sm text-slate-500">Status, warunki, źródło i data ostatniej weryfikacji.</p>
 
@@ -138,8 +139,10 @@ export default async function PlaceDetailsPage({ params }: Props) {
               );
             })}
           </ul>
-          <CardContributionForm placeSlug={place.slug} cards={place.cards} />
         </section>
+
+        <CardContributionForm placeSlug={place.slug} cards={place.cards} />
+        </div>
 
         <aside className="space-y-6">
           <section aria-labelledby="contact-h" className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
