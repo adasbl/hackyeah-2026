@@ -52,9 +52,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </div>
         {status === 'pending' ? <ReviewForm id={contribution.id} expectedUpdatedAt={place.updatedAt.toISOString()} canApprove={place.isPublished} /> : <div className="mt-4 space-y-1 break-words text-sm text-slate-600">
           <p>{status === 'approved' ? 'Zatwierdzono' : 'Odrzucono'} {contribution.reviewedAt ? dateFormat.format(contribution.reviewedAt) : ''}</p>
-          <p className="break-all text-xs text-slate-500">Administrator: {contribution.reviewedBy}</p>
-          {contribution.reviewNote ? <p className="whitespace-pre-wrap">{contribution.reviewNote}</p> : null}
-        </div>}
+          <p className="break-all text-xs text-slate-500">Administrator: {contribution.reviewedBy}</p>        </div>}
       </article>)}
     </div>
     <nav aria-label="Strony zgłoszeń" className="mt-6 flex items-center justify-between gap-4 text-sm">

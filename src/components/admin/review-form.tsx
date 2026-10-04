@@ -1,18 +1,15 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useActionState } from 'react';
 import { reviewContribution } from '@/app/admin/actions';
 
 export function ReviewForm({ id, expectedUpdatedAt, canApprove }: { id: string; expectedUpdatedAt: string; canApprove: boolean }) {
-  const noteId = useId();
   const [state, action, pending] = useActionState(reviewContribution, { success: false, message: '' });
   return (
     <form action={action} className="mt-5 border-t border-slate-200 pt-5">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />
       <fieldset disabled={pending || state.success} className="space-y-3 disabled:opacity-60">
-        <label htmlFor={noteId} className="block text-sm font-medium">Notatka do decyzji <span className="font-normal text-slate-500">(opcjonalnie)</span></label>
-        <textarea id={noteId} name="note" maxLength={1000} rows={2} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
         <div className="flex flex-wrap gap-3">
           <button name="decision" value="approved" disabled={!canApprove} className="min-h-11 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50">{pending ? 'Zapisywanie…' : 'Zatwierdź'}</button>
           <button name="decision" value="rejected" className="min-h-11 rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">Odrzuć</button>

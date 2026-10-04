@@ -44,9 +44,9 @@ export async function reviewContribution(_state: AdminActionState, formData: For
   const admin = await requireAdmin();
   const input = reviewContributionSchema.safeParse({
     id: formData.get('id'), decision: formData.get('decision'),
-    expectedUpdatedAt: formData.get('expectedUpdatedAt'), note: formData.get('note') ?? '',
+    expectedUpdatedAt: formData.get('expectedUpdatedAt'),
   });
-  if (!input.success) return { success: false, message: 'Niepoprawna decyzja lub zbyt długa notatka (maksymalnie 1000 znaków).' };
+  if (!input.success) return { success: false, message: 'Niepoprawna decyzja. Odśwież listę i spróbuj ponownie.' };
   let result: Awaited<ReturnType<ReturnType<typeof createModerationService>['review']>>;
   try {
     const { db } = await import('@/db/client');

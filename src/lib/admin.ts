@@ -7,12 +7,10 @@ export const REVIEW_LABELS: Record<ReviewStatus, string> = {
 };
 export type AdminActionState = { success: boolean; message: string };
 
-export const reviewContributionSchema = z.object({
-  id: z.uuid(),
-  decision: z.enum(['approved', 'rejected']),
-  expectedUpdatedAt: z.iso.datetime(),
-  note: z.string().trim().max(1000),
-});
+export const reviewContributionSchema = z.discriminatedUnion('decision', [
+  z.object({ id: z.uuid(), decision: z.literal('approved'), expectedUpdatedAt: z.iso.datetime() }),
+  z.object({ id: z.uuid(), decision: z.literal('rejected') }),
+]);
 export type ReviewContribution = z.infer<typeof reviewContributionSchema>;
 
 export const adminLoginSchema = z.object({

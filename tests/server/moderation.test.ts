@@ -5,12 +5,16 @@ import * as schema from '../../src/db/schema';
 import { reviewContributionSchema } from '../../src/lib/admin';
 import { createModerationService } from '../../src/server/moderation';
 
-const review = { id: 'ab6bc62e-5201-41f4-9a61-cf586f5de113', decision: 'approved' as const, expectedUpdatedAt: '2026-10-04T10:00:00.000Z', note: '' };
+const review = { id: 'ab6bc62e-5201-41f4-9a61-cf586f5de113', decision: 'approved' as const, expectedUpdatedAt: '2026-10-04T10:00:00.000Z' };
 
-test('moderacja odrzuca niepoprawne decyzje, identyfikatory, daty i za długie notatki', () => {
-  for (const invalid of [{ decision: 'pending' }, { id: 'anything' }, { expectedUpdatedAt: '' }, { note: 'a'.repeat(1001) }]) {
+test('moderacja odrzuca niepoprawne decyzje, identyfikatory i daty zatwierdzenia', () => {
+  for (const invalid of [{ decision: 'pending' }, { id: 'anything' }, { expectedUpdatedAt: '' }]) {
     assert.equal(reviewContributionSchema.safeParse({ ...review, ...invalid }).success, false);
   }
+});
+
+test('odrzucenie wymaga tylko identyfikatora zgłoszenia', () => {
+  assert.equal(reviewContributionSchema.safeParse({ id: review.id, decision: 'rejected', expectedUpdatedAt: null }).success, true);
 });
 
 test('konto bez aktywnych uprawnień nie odczyta kolejki i nie zapisze decyzji', async () => {

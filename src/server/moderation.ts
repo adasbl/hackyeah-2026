@@ -63,7 +63,7 @@ export function createModerationService(database: Database) {
       }
       await tx.update(cardContributions).set({
         reviewStatus: review.decision, reviewedAt: now, reviewedBy: userId,
-        reviewNote: review.note || null, previousClaim: previousClaim ?? null,
+        previousClaim: previousClaim ?? null,
       }).where(eq(cardContributions.id, entry.id));
       return review.decision;
     });

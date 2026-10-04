@@ -48,7 +48,7 @@ test('Supabase: kolejka, uprawnienia, decyzje, konflikty i historia moderacji', 
       assert.ok(queued, 'Zgłoszenie jest widoczne dla administratora');
       assert.equal(queued.currentClaim?.status, 'accepted');
       assert.equal(queued.contribution.status, 'conditional');
-      const decision = { id: first.id, decision: 'approved' as const, expectedUpdatedAt: place.updatedAt.toISOString(), note: 'Sprawdzone źródło' };
+      const decision = { id: first.id, decision: 'approved' as const, expectedUpdatedAt: place.updatedAt.toISOString() };
 
       await assert.rejects(moderation.list(randomUUID(), 'pending'), /ADMIN_REQUIRED/);
       await assert.rejects(moderation.review(randomUUID(), decision), /ADMIN_REQUIRED/);
@@ -74,7 +74,6 @@ test('Supabase: kolejka, uprawnienia, decyzje, konflikty i historia moderacji', 
       const approvedEntry = (await readEntries()).find((entry) => entry.id === pending.id)!;
       assert.equal(approvedEntry.reviewedBy, userId);
       assert.ok(approvedEntry.reviewedAt);
-      assert.equal(approvedEntry.reviewNote, 'Sprawdzone źródło');
       assert.equal(approvedEntry.previousClaim?.status, 'accepted');
       const history = await moderation.list(userId, 'approved');
       assert.ok(history.items.some(({ contribution }) => contribution.id === pending.id));
