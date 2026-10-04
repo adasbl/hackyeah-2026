@@ -248,7 +248,8 @@ export function PlacesMap({ initialPlaces, initialTotal, filters, overlay, heigh
     }
     syncMarkersRef.current = syncMarkers;
 
-    map.on('load', () => {
+    // Pinezki mogą ładować się równolegle z podkładem, bez czekania na wszystkie kafelki.
+    map.once('style.load', () => {
       map.addSource(SOURCE, {
         type: 'geojson',
         data: toGeoJson(placesRef.current),

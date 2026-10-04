@@ -6,6 +6,12 @@
  */
 import dynamic from 'next/dynamic';
 
+/** Wcześniejsze pobranie tego samego modułu, którego używa dynamic poniżej. */
+export function preloadPlacesMap() {
+  // Nieudane pobranie w tle nie blokuje listy; dynamic ponowi import przy wejściu na mapę.
+  void import('./places-map').catch(() => {});
+}
+
 export const PlacesMapLazy = dynamic(() => import('./places-map').then((m) => m.PlacesMap), {
   ssr: false,
   loading: () => (

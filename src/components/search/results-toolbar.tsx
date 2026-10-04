@@ -3,8 +3,9 @@
 import { ArrowDownAZ, ChevronDown, Clock, List, Loader2, LocateFixed, Map as MapIcon, Navigation, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useId, useTransition } from 'react';
+import { useEffect, useId, useTransition } from 'react';
 import type { PlacesSort } from '@repo/types';
+import { preloadPlacesMap } from '@/components/map/places-map-lazy';
 import { ALL_CITIES_SLUG } from '@/lib/catalog';
 import { buildSearchUrl, DEFAULT_RADIUS, hasLocation, type ResultView, type SearchFilters } from '@/lib/search-params';
 import { RadiusSelect } from './radius-select';
@@ -147,6 +148,17 @@ export function SortSelect({ city, filters }: Props) {
 
 /** Przełącznik Lista / Mapa – zapisany w URL (view=map), więc odświeżenie i „wstecz” go pamiętają. */
 export function ViewToggle({ city, filters }: Props) {
+  useEffect(() => {
+    if (filters.view !== 'list') return;
+    // Ciężki kod pobieramy po renderze listy, kiedy przeglądarka ma wolną chwilę.
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preloadPlacesMap, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(preloadPlacesMap, 750);
+    return () => clearTimeout(id);
+  }, [filters.view]);
+
   const views: { value: ResultView; label: string; icon: React.ReactNode }[] = [
     { value: 'list', label: 'Lista', icon: <List className="size-6" aria-hidden /> },
     { value: 'map', label: 'Mapa', icon: <MapIcon className="size-6" aria-hidden /> },
@@ -161,6 +173,11 @@ export function ViewToggle({ city, filters }: Props) {
             <Link
               key={v.value}
               href={buildSearchUrl(city, { ...filters, view: v.value })}
+              // Dynamiczna strona potrzebuje pełnego prefetch, razem z wynikami z serwera.
+              prefetch={!active}
+              onPointerEnter={v.value === 'map' ? preloadPlacesMap : undefined}
+              onFocus={v.value === 'map' ? preloadPlacesMap : undefined}
+              onTouchStart={v.value === 'map' ? preloadPlacesMap : undefined}
               scroll={false}
               aria-current={active ? 'page' : undefined}
               className={`flex h-full min-w-24 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-bold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] ${
