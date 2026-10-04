@@ -96,14 +96,14 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls={formId}
-          className="flex w-full items-center gap-3 rounded-2xl border border-white/70 bg-white/80 p-2.5 text-left shadow-[0_20px_50px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl sm:hidden"
+          className="flex w-full items-center gap-3 rounded-2xl border border-white/70 bg-white/80 p-3 text-left shadow-[0_20px_50px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl sm:hidden"
         >
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white">
             <SlidersHorizontal className="size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold text-ink">{summaryCity}</span>
-            <span className="block truncate text-xs text-slate-500">{summaryDetails}</span>
+            <span className="block text-sm leading-relaxed text-slate-500">{summaryDetails}</span>
           </span>
           <span className="flex shrink-0 items-center gap-1 pr-1 text-sm font-medium text-brand-600">
             {expanded ? 'Zwiń' : 'Zmień'}
@@ -116,34 +116,29 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
         onSubmit={submit}
         role="search"
         aria-label="Wyszukaj obiekt sportowy"
-        className={`relative rounded-3xl border border-white/70 bg-white/80 shadow-[0_30px_80px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl ${
-          hero ? 'p-3 sm:p-4' : 'p-2.5 sm:p-3'
+        className={`relative rounded-2xl border border-white/70 bg-white/80 shadow-[0_30px_80px_-30px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl ${
+          hero ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
         } ${collapsible ? `mt-2 sm:mt-0 ${expanded ? 'animate-pop' : 'hidden'} sm:block` : ''}`}
       >
-        <div className="grid gap-2 sm:grid-cols-[1.35fr_1fr_auto]">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto]">
           <CityCombobox options={cityOptions} value={city} onChange={setCity} onPickNearMe={pickNearMe} locating={geo === 'locating'} />
           <CategorySelect value={category} onChange={setCategory} />
           <button
             type="submit"
             disabled={pending}
-            className="group relative order-last flex h-16 items-center justify-center gap-2 overflow-hidden rounded-xl sm:order-none bg-gradient-to-br from-brand-500 to-violet-600 px-7 text-[15px] font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:shadow-xl hover:shadow-brand-600/40 active:scale-[0.98] disabled:opacity-70"
+            className="order-last flex min-h-16 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:shadow-xl hover:shadow-brand-600/40 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 sm:order-none"
           >
-            <span
-              className="absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 transition-all duration-700 group-hover:left-full group-hover:opacity-100"
-              aria-hidden
-            />
-            {pending ? <Loader2 className="size-5 animate-spin" /> : <Search className="size-5" />}
+            {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Search className="size-5" aria-hidden />}
             <span>Szukaj</span>
           </button>
 
-          <fieldset className="rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white p-2.5 sm:col-span-3 sm:p-3">
+          <fieldset className="mt-2 min-w-0 border-t border-slate-100 pt-4 sm:col-span-3">
             <legend className="sr-only">Karta sportowa</legend>
-            <p className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500" aria-hidden>
+            <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-ink" aria-hidden>
               <CreditCard className="size-3.5" />
               Twoja karta sportowa
-              <span className="font-normal normal-case tracking-normal text-slate-400">· możesz wybrać kilka</span>
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {CARD_PROVIDERS.map((p) => {
                 const on = cards.includes(p.slug);
                 return (
@@ -152,10 +147,10 @@ export function SearchForm({ cityOptions, initialCitySlug, initialCategory, init
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggleCard(p.slug)}
-                    className={`group relative flex h-14 items-center gap-2.5 rounded-xl border px-3 text-left text-[15px] font-semibold transition-all duration-200 active:scale-[0.98] ${
+                    className={`group relative flex min-h-14 min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
                       on
-                        ? 'border-brand-500 bg-brand-50 text-brand-800 shadow-md shadow-brand-600/15 ring-4 ring-brand-500/15'
-                        : 'border-slate-200 bg-white text-ink shadow-sm hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-md'
+                        ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500'
+                        : 'border-slate-200 bg-white text-ink hover:border-brand-500 hover:bg-brand-50/50'
                     }`}
                   >
                     <span

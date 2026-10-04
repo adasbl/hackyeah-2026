@@ -26,7 +26,7 @@ function useResultsNav({ city, filters }: Props) {
 }
 
 const chipBase =
-  'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium backdrop-blur transition active:scale-[0.98]';
+  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition active:scale-[0.98]';
 const chipStyles = {
   toolbar: {
     off: 'border-slate-200 bg-white/80 text-slate-600 shadow-sm hover:border-slate-300 hover:text-ink',
@@ -118,7 +118,7 @@ export function SortSelect({ city, filters }: Props) {
   const busy = pending || geo === 'locating';
   return (
     <div className="flex w-full flex-col gap-2 sm:w-48">
-      <label htmlFor={selectId} className="pl-1 text-xs font-bold uppercase tracking-wider text-slate-600">Sortowanie</label>
+      <label htmlFor={selectId} className="text-sm font-medium text-slate-600">Sortowanie</label>
       <div className="relative">
         <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : filters.sort === 'distance' ? <Navigation className="size-5" aria-hidden /> : <ArrowDownAZ className="size-5" aria-hidden />}
@@ -129,7 +129,7 @@ export function SortSelect({ city, filters }: Props) {
           onChange={(event) => sortBy(event.target.value as PlacesSort)}
           disabled={busy}
           aria-busy={busy}
-          className="h-12 w-full appearance-none rounded-2xl border border-slate-200 bg-white/90 pl-12 pr-10 text-[15px] font-semibold text-ink shadow-sm backdrop-blur transition hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
+          className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-11 pr-8 text-sm font-medium text-ink transition hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-70"
         >
           <option value="name">Nazwa</option>
           <option value="distance">Najbliżej</option>
@@ -160,13 +160,13 @@ export function ViewToggle({ city, filters }: Props) {
   }, [filters.view]);
 
   const views: { value: ResultView; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Lista', icon: <List className="size-6" aria-hidden /> },
-    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-6" aria-hidden /> },
+    { value: 'list', label: 'Lista', icon: <List className="size-4" aria-hidden /> },
+    { value: 'map', label: 'Mapa', icon: <MapIcon className="size-4" aria-hidden /> },
   ];
   return (
     <div className="flex w-full flex-col gap-2 sm:w-auto">
-      <span className="pl-1 text-xs font-bold uppercase tracking-wider text-slate-600">Widok wyników</span>
-      <nav aria-label="Widok wyników" className="inline-flex h-12 items-center gap-1 rounded-2xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
+      <span className="text-sm font-medium text-slate-600">Widok wyników</span>
+      <nav aria-label="Widok wyników" className="inline-flex h-12 items-center gap-1 rounded-xl border border-slate-800 bg-ink p-1 shadow-lg shadow-slate-900/15">
         {views.map((v) => {
           const active = filters.view === v.value;
           return (
@@ -180,7 +180,7 @@ export function ViewToggle({ city, filters }: Props) {
               onTouchStart={v.value === 'map' ? preloadPlacesMap : undefined}
               scroll={false}
               aria-current={active ? 'page' : undefined}
-              className={`flex h-full min-w-24 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-bold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] ${
+              className={`flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold transition focus-visible:outline-white focus-visible:outline-offset-[-3px] sm:min-w-24 sm:px-4 ${
                 active ? 'bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-md shadow-brand-600/30 ring-1 ring-inset ring-white/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'
               }`}
             >

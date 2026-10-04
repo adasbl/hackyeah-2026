@@ -7,9 +7,7 @@ export function CardStatusBadge({ claim, size = 'sm' }: { claim: CardClaim; size
   return (
     <span
       title={`${providerName(claim.provider)}: ${meta.label}${expired ? ' (informacja wymaga ponownej weryfikacji)' : ''}`}
-      className={`inline-flex items-center gap-1.5 rounded-full ring-1 ring-inset ${meta.className} ${
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'
-      } ${expired ? 'opacity-70' : ''}`}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-sm leading-snug ring-1 ring-inset ${meta.className} ${expired ? 'opacity-70' : ''}`}
     >
       <span className={`size-1.5 shrink-0 rounded-full ${meta.dot}`} aria-hidden />
       {size === 'sm' ? (

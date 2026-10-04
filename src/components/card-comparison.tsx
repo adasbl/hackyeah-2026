@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BarChart3, ChevronDown } from 'lucide-react';
+import { BarChart3, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import type { CardCoverage, CardStatsResponse } from '@repo/types';
@@ -8,154 +8,96 @@ import { providerName } from '@/lib/catalog';
 import { buildSearchUrl } from '@/lib/search-params';
 
 export interface CardStatsDataset {
-  /** slug miasta albo „polska” */
   slug: string;
-  /** krótka nazwa na zakładce, np. „Warszawa” */
   label: string;
-  /** „w Warszawie”, „w całej Polsce” */
   where: string;
   stats: CardStatsResponse;
 }
 
-/** Segmenty paska w stałej kolejności – kolor należy do statusu, nie do pozycji. */
 const SEGMENTS = [
-  { key: 'accepted', label: 'akceptuje', bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
-  { key: 'conditional', label: 'pod warunkami', bar: 'bg-amber-400', dot: 'bg-amber-400' },
-  { key: 'notAccepted', label: 'nie akceptuje', bar: 'bg-rose-400', dot: 'bg-rose-400' },
-  { key: 'unknown', label: 'brak danych', bar: 'bg-slate-200', dot: 'bg-slate-300' },
+  { key: 'accepted', label: 'akceptuje', bar: 'bg-emerald-500' },
+  { key: 'conditional', label: 'pod warunkami', bar: 'bg-amber-400' },
+  { key: 'notAccepted', label: 'nie akceptuje', bar: 'bg-rose-400' },
+  { key: 'unknown', label: 'brak danych', bar: 'bg-slate-200' },
 ] as const;
 
 const pct = (n: number, total: number) => (total ? Math.round((n / total) * 100) : 0);
 const covered = (p: CardCoverage) => p.accepted + p.conditional;
+const number = (n: number) => n.toLocaleString('pl-PL');
+const placeCount = (n: number) => n === 1 ? 'obiekt' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'obiekty' : 'obiektów';
 
-/**
- * „Która karta daje najwięcej?” – zwijana sekcja na stronie głównej.
- * Dla każdej karty pasek: ile obiektów ją akceptuje, ile pod warunkami, ile nie, a o ilu nie wiemy.
- * Zakładki przełączają obszar (cała Polska / miasta); dane dla wszystkich obszarów przychodzą z serwera.
- */
 export function CardComparison({ datasets }: { datasets: CardStatsDataset[] }) {
   const [open, setOpen] = useState(false);
   const [slug, setSlug] = useState(datasets[0]?.slug);
   const panelId = useId();
+  const areaId = useId();
   const current = datasets.find((d) => d.slug === slug) ?? datasets[0];
   if (!current) return null;
   const { total } = current.stats;
   const rows = [...current.stats.providers].sort((a, b) => covered(b) - covered(a) || b.accepted - a.accepted);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-[0_30px_80px_-40px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl">
+    <section className="overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_30px_80px_-40px_rgba(30,64,175,0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl">
       <h2>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-white/60 sm:px-5"
+          className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-white/60 sm:gap-4 sm:p-6"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-md shadow-brand-600/25">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-md shadow-brand-600/25">
             <BarChart3 className="size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold tracking-tight text-ink sm:text-base">Która karta daje najwięcej {current.where}?</span>
-            <span className="block truncate text-xs text-slate-500 sm:text-sm">Porównanie MultiSport, BeActive, Medicover Sport i PZU Sport</span>
+            <span className="block text-base font-semibold text-ink sm:text-lg">Która karta daje najwięcej {current.where}?</span>
+            <span className="mt-1 block text-sm font-normal leading-relaxed text-slate-500">Porównanie MultiSport, BeActive, Medicover Sport i PZU Sport</span>
           </span>
-          <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-brand-600">
-            <span className="hidden sm:inline">{open ? 'Zwiń' : 'Pokaż'}</span>
-            <ChevronDown className={`size-5 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden />
-          </span>
+          <ChevronDown className={`size-5 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
         </button>
       </h2>
-
-      {/* grid-rows 0fr → 1fr: płynne rozwinięcie bez mierzenia wysokości w JS */}
-      <div
-        id={panelId}
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-        inert={!open}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className="border-t border-slate-100 px-4 pb-5 pt-4 sm:px-5">
-            <div role="tablist" aria-label="Obszar porównania" className="-mx-1 flex flex-wrap gap-1.5">
-              {datasets.map((d) => {
-                const active = d.slug === current.slug;
-                return (
-                  <button
-                    key={d.slug}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setSlug(d.slug)}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                      active ? 'bg-ink text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-ink'
-                    }`}
-                  >
-                    {d.label}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-3 text-sm text-slate-500">
-              {total} {total === 1 ? 'obiekt' : 'obiektów'} {current.where} – kliknij kartę, żeby zobaczyć obiekty, które ją honorują.
-            </p>
-
-            <ul className="mt-4 space-y-4" role="tabpanel">
-              {rows.map((p) => {
-                const n = covered(p);
-                return (
-                  <li key={p.provider}>
-                    <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                      <Link
-                        href={buildSearchUrl(current.slug, { cards: [p.provider] })}
-                        className="group inline-flex items-center gap-1.5 font-semibold text-ink hover:text-brand-700"
-                      >
-                        {providerName(p.provider)}
-                        <ArrowRight
-                          className="size-3.5 -translate-x-1 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100"
-                          aria-hidden
-                        />
-                      </Link>
-                      <span className="text-sm text-slate-500">
-                        <span className="text-base font-semibold tabular-nums text-ink">{n}</span> / {total}
-                        <span className="ml-1.5 tabular-nums">({pct(n, total)}%)</span>
-                      </span>
-                    </div>
-                    <div
-                      className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-slate-100"
-                      role="img"
-                      aria-label={`${providerName(p.provider)}: akceptuje ${p.accepted}, pod warunkami ${p.conditional}, nie akceptuje ${p.notAccepted}, brak danych ${p.unknown}`}
-                    >
-                      {SEGMENTS.map((s) => {
-                        const value = p[s.key];
-                        if (!value) return null;
-                        return (
-                          <span
-                            key={s.key}
-                            title={`${providerName(p.provider)} – ${s.label}: ${value} (${pct(value, total)}%)`}
-                            className={`h-full transition-[width,filter] duration-500 first:rounded-l-full last:rounded-r-full hover:brightness-110 ${s.bar}`}
-                            style={{ width: `${(value / total) * 100}%` }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {p.accepted} akceptuje · {p.conditional} pod warunkami
-                      {p.notAccepted > 0 && <> · {p.notAccepted} nie</>}
-                      {p.unknown > 0 && <> · {p.unknown} brak danych</>}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-4 text-xs text-slate-600" aria-label="Legenda">
-              {SEGMENTS.map((s) => (
-                <li key={s.key} className="inline-flex items-center gap-1.5">
-                  <span className={`size-2.5 rounded-full ${s.dot}`} aria-hidden />
-                  {s.label}
-                </li>
-              ))}
-            </ul>
+      <div id={panelId} hidden={!open} className="border-t border-slate-100 p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm leading-relaxed text-slate-500">{number(total)} {placeCount(total)} {current.where}</p>
+          </div>
+          <div className="w-full shrink-0 sm:w-64">
+            <label htmlFor={areaId} className="sr-only">Obszar porównania</label>
+            <select id={areaId} value={current.slug} onChange={(e) => setSlug(e.target.value)} className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-base text-ink">
+              {datasets.map((d) => <option key={d.slug} value={d.slug}>{d.label}</option>)}
+            </select>
           </div>
         </div>
+        <ul className="mt-6 grid gap-x-8 gap-y-5 lg:grid-cols-2">
+          {rows.map((p) => {
+            const n = covered(p);
+            return (
+              <li key={p.provider} className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                  <Link href={buildSearchUrl(current.slug, { cards: [p.provider] })} className="font-semibold text-ink underline decoration-slate-300 underline-offset-4 hover:text-brand-700 hover:decoration-brand-600">
+                    {providerName(p.provider)}
+                  </Link>
+                  <span className="text-sm tabular-nums text-slate-500"><span className="font-semibold text-ink">{number(n)}</span> / {number(total)} ({pct(n, total)}%)</span>
+                </div>
+                <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`${providerName(p.provider)}: akceptuje ${p.accepted}, pod warunkami ${p.conditional}, nie akceptuje ${p.notAccepted}, brak danych ${p.unknown}`}>
+                  {SEGMENTS.map((s) => p[s.key] > 0 ? (
+                    <span key={s.key} title={`${s.label}: ${number(p[s.key])}`} className={`h-full ${s.bar}`} style={{ width: `${(p[s.key] / total) * 100}%` }} />
+                  ) : null)}
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  {number(p.accepted)} akceptuje · {number(p.conditional)} pod warunkami
+                  {p.notAccepted > 0 && <> · {number(p.notAccepted)} nie</>}
+                  {p.unknown > 0 && <> · {number(p.unknown)} brak danych</>}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+        <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600" aria-label="Legenda">
+          {SEGMENTS.map((s) => (
+            <li key={s.key} className="inline-flex items-center gap-2"><span className={`size-2.5 rounded-sm ${s.bar}`} aria-hidden />{s.label}</li>
+          ))}
+        </ul>
       </div>
     </section>
   );

@@ -8,7 +8,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: { default: 'Fit Pass Finder', template: '%s | Fit Pass Finder' },
   description:
-    'Znajdź siłownię, basen, jogę lub ściankę i sprawdź, czy obiekt deklaruje akceptację kart MultiSport, BeActive, Medicover Sport lub PZU Sport.',
+    'Znajdź siłownię, basen lub ściankę i sprawdź, czy obiekt deklaruje akceptację kart MultiSport, BeActive, Medicover Sport lub PZU Sport.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

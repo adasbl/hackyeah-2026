@@ -50,7 +50,7 @@ export function FavoritesList() {
         <p className="mt-1 text-sm text-slate-500">Kliknij serduszko przy obiekcie, a pojawi się tutaj.</p>
         <Link
           href="/"
-          className="mt-6 inline-block rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-brand-600/25"
+          className="mt-6 inline-block rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-brand-600/25"
         >
           Szukaj obiektów
         </Link>

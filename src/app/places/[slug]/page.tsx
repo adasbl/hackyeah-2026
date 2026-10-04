@@ -50,7 +50,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
   return (
     <div className="relative isolate">
     <Backdrop />
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3">
       <BackButton fallbackHref={`/${place.address.citySlug}`} label="Wróć do wyników" />
       <nav className="text-sm text-slate-500" aria-label="Okruszki">
@@ -62,11 +62,11 @@ export default async function PlaceDetailsPage({ params }: Props) {
       </nav>
       </div>
 
-      <header className="flex animate-fade-up flex-wrap items-start gap-4">
+      <header className="flex animate-fade-up flex-wrap items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
         <CategoryBadge category={place.category} size="lg" />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-48">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{category.name}</p>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{place.name}</h1>
+          <h1 className="mt-1 text-balance text-2xl font-bold leading-tight tracking-tight sm:text-3xl">{place.name}</h1>
           <p className="mt-1 text-slate-600">
             {[place.address.street, [place.address.postalCode, place.address.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
             {!place.address.street && <span className="block text-sm text-slate-500">Dokładny adres nie został jeszcze uzupełniony.</span>}
@@ -78,8 +78,8 @@ export default async function PlaceDetailsPage({ params }: Props) {
 
       {place.description && <p className="mt-4 max-w-2xl text-slate-700">{place.description}</p>}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
-        <section aria-labelledby="cards-h" className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section aria-labelledby="cards-h" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 id="cards-h" className="text-lg font-semibold">Karty sportowe</h2>
           <p className="mb-4 text-sm text-slate-500">Status, warunki, źródło i data ostatniej weryfikacji.</p>
 
@@ -168,7 +168,7 @@ export default async function PlaceDetailsPage({ params }: Props) {
                 href={directionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition hover:shadow-lg active:scale-[0.98]"
+                className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition hover:shadow-lg active:scale-[0.98]"
               >
                 <Navigation className="size-4" aria-hidden />
                 Wyznacz trasę

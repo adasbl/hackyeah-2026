@@ -83,7 +83,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
   return (
     <div className="relative isolate">
       <Backdrop />
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {/* relative z-20: rozwijane listy formularza muszą być nad mapą (obie sekcje mają własne warstwy przez animację) */}
         <div className="relative z-20 animate-fade-up">
           <SearchForm
@@ -97,9 +97,9 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           />
         </div>
 
-        <div className="mb-4 mt-10 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <div className="mb-5 mt-8 flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0 flex-1 basis-72">
+            <h1 className="text-balance text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
               {filters.category ? categoryOf(filters.category).name : 'Obiekty sportowe'} {placeLabel}
             </h1>
             <p className="mt-1 text-sm text-slate-500" aria-live="polite">
@@ -112,7 +112,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
           {hasFilters && (
             <Link
               href={buildSearchUrl(city, { cards: [], open: false, sort: 'name', view: filters.view, page: 1 })}
-              className="flex h-12 items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-4 text-sm font-medium text-slate-600 shadow-sm backdrop-blur transition hover:border-slate-300 hover:text-ink"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-ink"
             >
               <X className="size-3.5" aria-hidden />
               Wyczyść filtry
@@ -121,9 +121,9 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
         </div>
 
         {/* Lista: filtry + sortowanie nad wynikami. Mapa: filtry leżą na samej mapie, a sortowanie nie ma sensu. */}
-        <div className="relative z-10 mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative z-10 mb-6 flex flex-col gap-4 border-y border-slate-200 py-4 lg:flex-row lg:items-end lg:justify-between">
           {(isList || !hasResults) && <FilterChips city={city} filters={filters} />}
-          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:items-start lg:ml-auto">
+          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:items-start lg:ml-auto">
             <ViewToggle city={city} filters={filters} />
             {isList && items.length > 0 && <SortSelect city={city} filters={filters} />}
           </div>
@@ -159,7 +159,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
               {nearby && nextRadius && (
                 <Link
                   href={buildSearchUrl(city, { ...filters, radius: nextRadius, page: 1 })}
-                  className="rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-brand-600/25"
+                  className="rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-brand-600/25"
                 >
                   Zwiększ promień do {formatDistance(nextRadius)}
                 </Link>
@@ -167,7 +167,7 @@ export default async function SearchResultsPage({ params, searchParams }: Props)
               {!nearby && city !== ALL_CITIES_SLUG && (
                 <Link
                   href={buildSearchUrl(ALL_CITIES_SLUG, { ...filters, page: 1 })}
-                  className="rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-brand-600/25"
+                  className="rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-brand-600/25"
                 >
                   Szukaj w całej Polsce
                 </Link>
