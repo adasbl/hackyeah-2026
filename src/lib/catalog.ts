@@ -18,11 +18,13 @@ export const CARD_PROVIDERS: CardProvider[] = [
 /** gradient: klasy Tailwind dla kafelka ikony kategorii */
 export const CATEGORIES: (Category & { gradient: string; soft: string })[] = [
   { slug: 'silownia', name: 'Siłownia', gradient: 'from-rose-500 to-orange-400', soft: 'bg-rose-50 text-rose-600' },
-  { slug: 'basen', name: 'Basen', gradient: 'from-sky-500 to-cyan-400', soft: 'bg-sky-50 text-sky-600' },
+  { slug: 'basen', name: 'Basen / pływalnia', gradient: 'from-sky-500 to-cyan-400', soft: 'bg-sky-50 text-sky-600' },
   { slug: 'fitness', name: 'Fitness', gradient: 'from-fuchsia-500 to-pink-400', soft: 'bg-fuchsia-50 text-fuchsia-600' },
   { slug: 'joga', name: 'Joga', gradient: 'from-emerald-500 to-teal-400', soft: 'bg-emerald-50 text-emerald-600' },
   { slug: 'wspinaczka', name: 'Ścianka wspinaczkowa', gradient: 'from-amber-500 to-yellow-400', soft: 'bg-amber-50 text-amber-600' },
-  { slug: 'squash', name: 'Squash', gradient: 'from-indigo-500 to-violet-400', soft: 'bg-indigo-50 text-indigo-600' },
+  { slug: 'squash', name: 'Squash / padel', gradient: 'from-indigo-500 to-violet-400', soft: 'bg-indigo-50 text-indigo-600' },
+  { slug: 'tenis', name: 'Korty tenisowe', gradient: 'from-lime-500 to-green-400', soft: 'bg-lime-50 text-lime-600' },
+  { slug: 'taniec', name: 'Taniec', gradient: 'from-purple-500 to-fuchsia-400', soft: 'bg-purple-50 text-purple-600' },
 ];
 
 export const CITIES = [

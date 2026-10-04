@@ -7,7 +7,7 @@
 export const CARD_PROVIDER_SLUGS = ['multisport', 'beactive', 'medicover-sport', 'pzu-sport'] as const;
 export type CardProviderSlug = (typeof CARD_PROVIDER_SLUGS)[number];
 
-export const CATEGORY_SLUGS = ['silownia', 'basen', 'fitness', 'joga', 'wspinaczka', 'squash'] as const;
+export const CATEGORY_SLUGS = ['silownia', 'basen', 'fitness', 'joga', 'wspinaczka', 'squash', 'tenis', 'taniec'] as const;
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
 
 /** Status karty – nigdy boolean. */

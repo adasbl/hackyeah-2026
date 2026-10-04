@@ -30,6 +30,8 @@ const MARKER_COLORS: Record<CategorySlug, string> = {
   joga: '#10b981',
   wspinaczka: '#f59e0b',
   squash: '#6366f1',
+  tenis: '#84cc16',
+  taniec: '#a855f7',
 };
 
 export interface PlacesMapFilters {

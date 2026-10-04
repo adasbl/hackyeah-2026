@@ -1,4 +1,4 @@
-import { Dumbbell, Flower2, HeartPulse, LayoutGrid, Mountain, Target, Waves, type LucideIcon } from 'lucide-react';
+import { Dumbbell, Flower2, HeartPulse, LayoutGrid, Mountain, Target, Waves, Music, CircleDot, type LucideIcon } from 'lucide-react';
 import type { CategorySlug } from '@repo/types';
 import { categoryOf } from '@/lib/catalog';
 
@@ -9,6 +9,8 @@ const ICONS: Record<CategorySlug, LucideIcon> = {
   joga: Flower2,
   wspinaczka: Mountain,
   squash: Target,
+  tenis: CircleDot,
+  taniec: Music,
 };
 
 /** Sama ikona kategorii (albo „wszystkie”, gdy brak kategorii) */
