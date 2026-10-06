@@ -1,5 +1,7 @@
 # Submission moderation
 
+[Technical documentation](README.md) · [Hackathon demo login](admin-demo-access.md)
+
 The "Panel administratora" link in the footer leads to `/admin`. Anyone without an active
 administrator account is redirected to `/admin/login`. Login uses Supabase Auth
 (email and password); the app has no sign-up form.
@@ -26,8 +28,9 @@ administrator account is redirected to `/admin/login`. Login uses Supabase Auth
    on conflict (user_id) do update set is_active = true;
    ```
 
-6. Open `/admin`, sign in and check the queue. Do not share passwords through Git
-   or chat. Each additional administrator gets their own account.
+6. Open `/admin`, sign in and check the queue. Keep credentials for non-demo
+   environments outside Git or chat. Each additional administrator gets their own account.
+   The shared hackathon account is documented in [demo access](admin-demo-access.md).
 
 Revoking access (the decision history is kept):
 

@@ -1,5 +1,9 @@
 # Fit Pass Finder
 
+> Original project assumptions for the HackYeah 2026 MVP. This document describes
+> the planned scope; see the [project overview](../README.md) and
+> [technical documentation](README.md) for the implemented features and setup.
+
 ## Polski — założenia projektowe
 
 ### Cel
@@ -19,7 +23,7 @@ Projekt zakłada stworzenie wyszukiwarki obiektów sportowych w Polsce, która p
 
 Zakres katalogu: **ponad 11 000 obiektów z całej Polski**.
 
-Część danych jest pobierana z internetu na bieżąco, w momencie wyszukiwania przez użytkownika.
+W obecnej implementacji wyszukiwanie odczytuje dane zapisane w bazie. Import OSM i skanowanie stron obiektów są uruchamiane osobno, poza żądaniami użytkowników.
 
 Dane lokalizacyjne mają pochodzić z OpenStreetMap, a informacje o kartach i warunkach wejścia — ze stron obiektów, źródeł operatorów i zgłoszeń użytkowników. Import powinien uwzględniać normalizację, wykrywanie duplikatów i kontrolę jakości przed publikacją.
 
@@ -52,7 +56,7 @@ The project aims to create a search engine for sports venues in Poland that help
 
 Catalogue scope: **more than 11,000 venues across Poland**.
 
-Some data is fetched from the internet in real time when the user performs a search.
+In the current implementation, searches read data stored in the database. OSM imports and venue website scans run separately, outside user requests.
 
 Location data should come from OpenStreetMap, while card acceptance and admission conditions should come from venue websites, card operator sources and user reports. Imports should include normalisation, duplicate detection and quality checks before publication.
 
